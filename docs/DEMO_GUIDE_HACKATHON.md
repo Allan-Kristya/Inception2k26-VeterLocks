@@ -1,10 +1,15 @@
 # LaporAman — Panduan Demo Juri (5–7 Menit)
 
+## Demo publik
+
+Aplikasi: <https://laporaman-hackathon-v201.onrender.com>  
+Health check: <https://laporaman-hackathon-v201.onrender.com/api/health>
+
 ## Persiapan sebelum juri datang
 
 - Pastikan URL demo dapat dibuka melalui HTTPS dan endpoint `/api/health` menyatakan database terhubung.
 - Siapkan akun demo dengan hak akses minimum dan password demo yang sudah diganti dari default.
-- Siapkan satu laporan dummy yang tidak berisi data pribadi sungguhan.
+- Siapkan satu laporan fiktif/dummy. Jangan gunakan data pribadi atau laporan masyarakat sungguhan.
 - Pastikan admin telah membuat kunci publik instansi dan private key terenkripsi beserta password brankas tersedia untuk demonstrasi.
 - Siapkan browser kedua/perangkat kedua untuk memperlihatkan sisi pelapor.
 - Siapkan ZIP lokal sebagai cadangan jika koneksi internet atau server publik bermasalah.

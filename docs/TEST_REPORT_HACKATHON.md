@@ -1,47 +1,44 @@
-# LaporAman — Catatan Pengujian Hackathon
+# LaporAman — Catatan Pengujian Hackathon v2.0.1
 
-Tanggal: 31 Oktober 2026
+Tanggal validasi deployment publik: **31 Oktober 2026**
 
-## Pengujian yang dijalankan pada lingkungan kerja
+## Validasi otomatis pada source project
+
+Hasil pengujian otomatis yang tercatat pada paket pengembangan:
 
 | Pemeriksaan | Hasil |
 |---|---|
 | Backend API pytest | 10 passed |
-| Persistensi laporan setelah instance aplikasi dimulai ulang (SQLite file) | Lulus |
-| E2EE smoke test (pemilik, petugas, password salah) | Lulus pada pengujian sebelumnya dan perlu diulang setelah perubahan akhir |
+| E2EE smoke test (owner decrypt, staff decrypt, wrong-password rejection) | Lulus pada pengujian sebelumnya |
 | `node --check frontend/script.js` | Lulus pada pengujian sebelumnya |
 | `node --check frontend/crypto.js` | Lulus pada pengujian sebelumnya |
-| Docker Compose / PostgreSQL / RLS | Belum diuji: Docker CLI tidak tersedia di lingkungan kerja |
-| Browser end-to-end pada Windows | Belum diuji: perlu dilakukan pada komputer demo |
-| Deployment publik HTTPS | Belum dilakukan |
 
-## Perubahan setelah pengujian
+## Validasi manual pada deployment publik
 
-- Health endpoint memeriksa koneksi database runtime dengan `SELECT 1` dan mengembalikan HTTP 503 jika database tidak dapat diakses.
-- Launcher Windows memeriksa apakah server sudah aktif, mencegah startup kedua pada port 8000, dan menunggu health check database sebelum membuka browser.
-- Dependency driver PostgreSQL dipisah ke `backend/requirements-postgres.txt`, sehingga jalur Windows/SQLite tidak perlu memasang driver PostgreSQL yang tidak dipakai.
-- Tes persistensi file SQLite ditambahkan untuk memastikan laporan masih dapat dilacak setelah aplikasi dibuat ulang.
-
-## Pengujian wajib pada komputer demo
-
-1. Jalankan `start-laporaman-windows.bat`.
-2. Pastikan `/api/health` menunjukkan `database_status: connected`.
-3. Kirim satu laporan dummy dan simpan nomor tiket.
-4. Hentikan server dengan Ctrl+C lalu jalankan ulang launcher.
-5. Lacak nomor tiket yang sama; laporan harus tetap ditemukan.
-6. Login sebagai petugas, proses laporan, dan pastikan tracker menunjukkan status terbaru.
-7. Uji logout/login, password salah, dan akses operator lintas OPD.
-8. Jika menggunakan Docker, jalankan pengujian terpisah terhadap PostgreSQL dan RLS sebelum demo publik.
-
-
-## Validasi rilis v1.0.1 (31 Oktober 2026)
+Deployment demo berjalan di Render dan menggunakan PostgreSQL Neon. Pengujian manual berikut telah dilakukan pada aplikasi publik dan dinyatakan berhasil:
 
 | Pemeriksaan | Hasil |
 |---|---|
-| Backend API pytest setelah penambahan release marker | 10 passed |
-| E2EE smoke test | Lulus: owner decrypt, staff decrypt, wrong-password rejection |
-| Sintaks `frontend/script.js` | Lulus (`node --check`) |
-| Sintaks `frontend/crypto.js` | Lulus (`node --check`) |
-| Identitas rilis pada health check | `laporaman-hackathon-demo-v1.0.1` |
+| Aplikasi publik dapat dibuka melalui HTTPS | Lulus |
+| `/api/health` melaporkan release `laporaman-hackathon-demo-v2.0.1` | Lulus |
+| Koneksi runtime ke PostgreSQL (`database_status: connected`) | Lulus |
+| Administrator dapat login | Lulus |
+| Kunci enkripsi instansi dapat dibuat | Lulus |
+| Laporan dummy dapat dikirim dari halaman publik | Lulus |
+| Detail laporan dapat dibuka oleh administrator | Lulus |
+| Administrator dapat memverifikasi dan merutekan laporan ke OPD | Lulus |
+| Laporan muncul pada dashboard operator OPD | Lulus |
+| Operator dapat membuka detail dan memajukan status | Lulus |
+| Status akhir `Selesai`, tracker, dan jejak audit terverifikasi | Lulus |
+| Data tetap tersedia setelah service Render direstart | Lulus |
 
-Perbaikan launcher: server pada port 8000 hanya digunakan ulang jika release marker cocok dan database health check menyatakan `connected`. Proses dari versi lama ditolak agar source code baru tidak diam-diam memakai backend/database dari folder lain.
+## Batas cakupan validasi
+
+- Pemeriksaan health dan alur aplikasi membuktikan bahwa backend terhubung ke PostgreSQL pada deployment demo; pemeriksaan ini **bukan** audit independen atas seluruh kebijakan RLS.
+- Uji isolasi RLS lintas tenant/OPD secara terpisah masih diperlukan.
+- Penetration test, threat modeling, audit keamanan/legal, uji backup-restore terjadwal, dan disaster-recovery drill belum dilakukan.
+- Seluruh laporan yang digunakan untuk demo harus berupa data fiktif/dummy.
+
+## Catatan pengujian lokal dan alternatif
+
+Panduan menjalankan jalur SQLite pada Windows dan PostgreSQL Docker Compose dipindahkan ke [dokumen opsional](opsional/QUICK_START_LOKAL_WINDOWS.md). Pengujian lokal tidak boleh dianggap sebagai pengganti pengujian pada deployment publik.

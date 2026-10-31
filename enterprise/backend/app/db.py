@@ -6,10 +6,9 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.pool import QueuePool
 from sqlalchemy.orm import Session, sessionmaker
 
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL",
-    "postgresql+psycopg://laporaman_runtime:change-me@db:5432/laporaman",
-)
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL harus diatur melalui environment sebelum database digunakan.")
 engine = create_engine(DATABASE_URL, poolclass=QueuePool, pool_pre_ping=True, pool_size=10, max_overflow=20)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False, class_=Session)
 

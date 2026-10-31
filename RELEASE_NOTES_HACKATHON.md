@@ -1,33 +1,34 @@
-# LaporAman Hackathon Demo v1.0.1
+# LaporAman Hackathon Demo — Release v2.0.1
 
-Perbaikan rilis: launcher hanya menggunakan ulang server apabila `release` cocok dengan v1.0.1 dan database health check terhubung. Server versi lama yang masih memakai port 8000 sekarang ditolak dan PID-nya ditampilkan. Endpoint health menambahkan identitas rilis agar proses yang berjalan dapat diverifikasi.
+**Tanggal rilis:** 31 Oktober 2026  
+**Identitas backend:** `laporaman-hackathon-demo-v2.0.1`  
+**Demo publik:** <https://laporaman-hackathon-v201.onrender.com>
 
-# LaporAman Hackathon Demo — Release Notes
+## Ringkasan rilis
 
-## Isi rilis
+v2.0.1 merupakan paket demo full-stack yang digunakan pada deployment publik hackathon. Rilis ini memuat frontend pelaporan/tracker/dashboard, backend FastAPI, dukungan PostgreSQL, alur enkripsi di browser, autentikasi petugas, routing OPD, status bertahap, audit trail, dan worker SLA.
 
-- Frontend LaporAman dan modul Web Crypto.
+## Komponen utama
+
+- Frontend HTML/CSS/JavaScript dan Web Crypto API.
 - Backend FastAPI + SQLAlchemy.
-- Jalur SQLite untuk demo lokal Windows.
-- Konfigurasi Docker Compose + PostgreSQL untuk deployment.
-- Launcher `start-laporaman-windows.bat`.
-- Tes API, tes E2EE, dan dokumentasi quick start/deployment/demo.
+- PostgreSQL melalui Neon pada deployment publik.
+- Dockerfile untuk Render Web Service.
+- Jalur SQLite dan Docker Compose dipertahankan sebagai opsi pengembangan lokal.
+- Tes API, E2EE smoke test, serta panduan demo/pengembangan.
 
-## Perbaikan dalam paket ini
+## Validasi deployment publik
 
-- Health check memeriksa koneksi database runtime.
-- Tes persistensi laporan setelah aplikasi dimulai ulang.
-- Launcher Windows menghindari server ganda pada port 8000 dan menunggu health check siap.
-- Driver PostgreSQL dipisahkan dari dependency jalur SQLite agar startup lokal lebih ringan.
-- Port API Compose diikat ke localhost; akses publik sebaiknya melalui reverse proxy HTTPS.
+Pengujian manual pada deployment publik telah dilaporkan berhasil:
 
-## Status validasi
+- Endpoint `/api/health` menampilkan release `laporaman-hackathon-demo-v2.0.1` dan `database_status: connected`.
+- Pelapor dapat mengirim laporan melalui URL publik.
+- Administrator dapat membuka detail laporan dengan kunci instansi.
+- Laporan dapat diverifikasi dan diteruskan ke OPD.
+- Operator OPD dapat melihat, membuka, dan memproses laporan.
+- Status dapat dimajukan hingga `Selesai`; tracker dan jejak audit menampilkan pembaruan.
+- Data laporan tetap tersedia setelah service Render direstart.
 
-- Backend tests: 10 passed.
-- E2EE smoke test: passed.
-- JavaScript syntax checks: passed.
-- Docker/PostgreSQL/RLS and public HTTPS deployment: not validated in the current execution environment; run the deployment smoke tests before presenting a public URL.
+## Batasan
 
-## Batasan produk
-
-Klasifikasi masih heuristik kata kunci dan semua laporan memerlukan human review. IndoBERTweet, Whisper Large v3, native Android, dan audit keamanan independen belum tersedia. Jangan klaim fitur tersebut sudah berjalan.
+Klasifikasi masih berupa heuristik kata kunci untuk demonstrasi dan memerlukan tinjauan manusia. IndoBERTweet, Whisper Large v3, aplikasi mobile native, dan audit keamanan independen belum tersedia. Keberhasilan alur demo tidak sama dengan sertifikasi keamanan atau kesiapan menerima data masyarakat sungguhan.

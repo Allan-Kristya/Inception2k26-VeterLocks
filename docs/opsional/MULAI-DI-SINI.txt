@@ -1,0 +1,19 @@
+PANDUAN CEPAT LAPORAMAN — HACKATHON DEMO v2.0.1
+========================================
+
+1. Ekstrak ZIP ke folder biasa (jangan jalankan file dari dalam ZIP).
+2. Pastikan Python 3.11+ terpasang dan perintah `py` tersedia.
+3. Double-click start-laporaman-windows.bat.
+4. Tunggu instalasi dependency pertama kali dan browser terbuka di http://127.0.0.1:8000.
+5. Periksa http://127.0.0.1:8000/api/health. Pastikan release = laporaman-hackathon-demo-v2.0.1 dan database_status = connected.
+6. Jika port 8000 sudah dipakai versi lama, launcher akan menampilkan PID. Hentikan dengan: taskkill /PID <PID> /T /F, lalu ulangi launcher.
+7. Dokumentasi API: http://127.0.0.1:8000/docs.
+8. Akun demo, alur pelaporan, dan cara menjalankan aplikasi ada di docs/opsional/QUICK_START_LOKAL_WINDOWS.md.
+9. Naskah demo juri ada di docs/DEMO_GUIDE_HACKATHON.md.
+10. Panduan VPS + HTTPS ada di docs/opsional/DEPLOYMENT_VPS_HTTPS.md.
+
+CATATAN:
+- Koneksi internet diperlukan pada pemasangan dependency pertama kali.
+- SQLite lokal tersimpan pada file laporaman.db di root project. Jangan hapus jika ingin mempertahankan laporan demo.
+- Gunakan data dummy saja. Jangan gunakan akun demo atau secret contoh untuk deployment publik.
+- Jangan menghapus volume PostgreSQL dengan `docker compose down -v` jika data harus dipertahankan.
