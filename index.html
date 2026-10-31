@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LaporAman</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Lexend:wght@400;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#main">Lewati ke konten utama</a>
+<header>
+<div class="bar">
+<strong class="brand">LaporAman</strong>
+<nav aria-label="Menu utama">
+<a href="#lapor">Lapor</a><a href="#lacak">Lacak</a><a href="#dasbor">Dasbor instansi</a><a href="#integrasi">Integrasi API</a><a href="#tentang">Tentang</a>
+</nav>
+</div>
+<div class="a11y" role="group" aria-label="Mode aksesibilitas tinggi">
+<label>Ukuran teks <input id="zoom" type="range" min="100" max="200" step="25" value="100"> <output id="zo" for="zoom">100%</output></label>
+<button id="hc" type="button" aria-pressed="false">Kontras tinggi</button>
+<button id="dys" type="button" aria-pressed="false">Font ramah disleksia</button>
+<button id="vc" type="button">Perintah suara</button>
+</div>
+</header>
+<main id="main" tabindex="-1">
+
+<section id="v-lapor" class="view">
+<h1 tabindex="-1">Sampaikan laporan</h1>
+<p class="lead">Ceritakan masalahnya dengan bahasa Anda sendiri, ketik atau dikte. Mesin klasifikasi memilih instansi yang berwenang dalam hitungan detik.</p>
+<div class="grid">
+<div class="card">
+<label for="wil">Wilayah</label>
+<select id="wil"></select>
+<label for="desc">Isi laporan</label>
+<textarea id="desc" rows="5" aria-describedby="ai"></textarea>
+<button id="mic" type="button">Dikte dengan suara</button>
+<div id="ai" aria-live="polite"></div>
+<label for="loc">Lokasi kejadian</label>
+<div class="row"><input id="loc" autocomplete="off"><button id="geo" type="button">Pakai lokasi saya</button></div>
+<label for="file">Lampiran foto atau dokumen (maks. 1 MB)</label>
+<input id="file" type="file">
+</div>
+<div class="card">
+<label class="sw"><input id="anon" type="checkbox" role="switch"> Laporan anonim</label>
+<p class="hint">Identitas tidak dikirim. Metadata perangkat hanya disimpan sebagai hash satu arah.</p>
+<div id="idf">
+<label for="nama">Nama lengkap</label><input id="nama" autocomplete="name">
+<label for="nik">Nomor KTP</label><input id="nik" inputmode="numeric" autocomplete="off">
+<label for="kontak">Email / No. HP (untuk notifikasi real-time)</label><input id="kontak" autocomplete="email">
+<label for="alamat">Alamat domisili</label><input id="alamat" autocomplete="street-address">
+</div>
+<label for="sens">Detail sensitif (hanya Anda yang bisa membaca)</label>
+<textarea id="sens" rows="3"></textarea>
+<label for="pw">Kata sandi brankas</label>
+<input id="pw" type="password" autocomplete="new-password" aria-describedby="pwh">
+<p class="hint" id="pwh">Kunci AES-256-GCM diturunkan dari kata sandi ini di perangkat Anda dengan PBKDF2-HMAC-SHA256, 100.000 iterasi. Kata sandi tidak pernah dikirim dan tidak bisa dipulihkan jika lupa.</p>
+<button id="send" type="button" class="pri">Kirim laporan</button>
+</div>
+</div>
+<div id="res" aria-live="polite"></div>
+</section>
+
+<section id="v-lacak" class="view" hidden>
+<h1 tabindex="-1">Lacak laporan</h1>
+<div class="card">
+<label for="tid">Nomor registrasi tiket</label>
+<div class="row"><input id="tid" placeholder="LA-2026-0001" autocomplete="off"><button id="trk" type="button" class="pri">Lacak</button></div>
+<label for="pw2">Kata sandi brankas (opsional, untuk membuka detail terenkripsi Anda)</label>
+<input id="pw2" type="password" autocomplete="off">
+</div>
+<div id="tout" aria-live="polite"></div>
+</section>
+
+<section id="v-dasbor" class="view" hidden>
+<h1 tabindex="-1">Dasbor instansi</h1>
+<div class="card">
+<div class="grid">
+<div><label for="dwil">Pemerintah daerah</label><select id="dwil"></select></div>
+<div><label for="dopd">Organisasi perangkat daerah</label><select id="dopd"></select></div>
+</div>
+<div class="row"><button id="login" type="button" class="pri">Masuk dan terbitkan token JWT</button><button id="skew" type="button">Majukan waktu simulasi 24 jam</button></div>
+<p class="hint mono" id="tok">Belum masuk. Gateway menolak permintaan tanpa token.</p>
+<p class="hint">Isolasi multi-tenant: kueri hanya mengembalikan baris milik wilayah dan OPD yang dipilih, seperti kebijakan Row-Level Security.</p>
+</div>
+<div id="dash" hidden>
+<div class="stats" id="stats"></div>
+<div id="list"></div>
+</div>
+</section>
+
+<section id="v-integrasi" class="view" hidden>
+<h1 tabindex="-1">Integrasi e-government</h1>
+<div class="grid">
+<div class="card">
+<h2>API Gateway</h2>
+<p class="hint">Validasi token JWT stateless dan pembatasan laju 8 permintaan per 10 detik untuk setiap rute. Berjalan sebagai simulasi di peramban.</p>
+<ul id="glog"></ul>
+</div>
+<div class="card">
+<h2>Webhook dan rekap data</h2>
+<label for="hook">URL webhook aplikasi Smart City</label>
+<div class="row"><input id="hook" placeholder="https://smartcity.contoh.go.id/hook"><button id="hset" type="button">Simpan</button></div>
+<button id="getstat" type="button">Ambil rekap /stats</button>
+<pre id="stat" tabindex="0">Belum ada data.</pre>
+<ul id="wlog"></ul>
+</div>
+</div>
+<div class="card">
+<h2>OpenAPI Specification v3.1.0</h2>
+<button id="cp" type="button">Salin spesifikasi</button>
+<pre id="oas" tabindex="0"></pre>
+</div>
+</section>
+
+<section id="v-tentang" class="view" hidden>
+<h1 tabindex="-1">Tentang LaporAman</h1>
+<p class="lead">Platform pelaporan publik cerdas dari UPN “Veteran” Jawa Timur: efektif, efisien, transparan, aman, inklusif, dan terpercaya.</p>
+<div class="grid">
+<div class="card"><h2>Triase cerdas</h2><p>Klasifikasi multilabel lintas sektor dengan skor keyakinan. Keyakinan di bawah 70% masuk antrean tinjauan petugas (human-in-the-loop).</p></div>
+<div class="card"><h2>Zero-Knowledge dan E2EE</h2><p>Identitas, detail sensitif, dan lampiran dienkripsi di perangkat dengan PBKDF2 dan AES-256-GCM. Server hanya menerima ciphertext.</p></div>
+<div class="card"><h2>Aksesibilitas WCAG 2.1 AA</h2><p>Kontras tinggi, zoom teks hingga 200%, label ARIA, navigasi keyboard, dikte suara, dan perintah suara.</p></div>
+<div class="card"><h2>Interoperabilitas SPBE</h2><p>REST API dengan spesifikasi OpenAPI 3.1.0, webhook, gateway, dan isolasi data antarwilayah.</p></div>
+</div>
+<div class="card">
+<h2>Peta jalan lima bulan</h2>
+<ol>
+<li>Bulan 1: riset pengguna dan desain UX sesuai WCAG 2.1 AA.</li>
+<li>Bulan 2: infrastruktur kriptografi, Kubernetes, RLS, dan fine-tuning IndoBERTweet dengan Focal Loss.</li>
+<li>Bulan 3: klien web dan mobile, ASR Whisper, serta KrakenD API Gateway.</li>
+<li>Bulan 4: beta di kota percontohan dan audit keamanan KAMI, SNI ISO/IEC 27001:2022.</li>
+<li>Bulan 5: stabilisasi, publikasi OpenAPI, dan peluncuran B2G.</li>
+</ol>
+</div>
+<div class="card">
+<h2>Tim pengusul</h2>
+<p>Allan Kristya N (ketua dan arsitek sistem), Yohanes Danu Raharjo (kecerdasan buatan), Mohamad Payoda Soleh (keamanan dan infrastruktur).</p>
+<p class="hint">Catatan prototipe: kriptografi memakai Web Crypto asli. Klasifikasi, gateway, RLS, dan webhook adalah simulasi di peramban. Dikte dan perintah suara memakai pengenalan suara bawaan peramban.</p>
+</div>
+</section>
+
+</main>
+<div id="toast" role="status"></div>
+<script src="script.js" defer></script>
+</body>
+</html>
