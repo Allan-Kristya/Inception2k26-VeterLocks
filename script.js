@@ -14,14 +14,24 @@ const WIL = {
 };
 
 const OPD = [
+<<<<<<< HEAD
   { id: 'pu', n: 'Dinas Pekerjaan Umum', sla: 72, k: ['jalan', 'berlubang', 'lubang', 'aspal', 'jembatan', 'drainase', 'selokan', 'banjir', 'trotoar', 'bolong', 'gorong'] },
   { id: 'hub', n: 'Dinas Perhubungan', sla: 48, k: ['macet', 'lalu lintas', 'lampu merah', 'rambu', 'angkot', 'parkir', 'kecelakaan', 'bus'] },
   { id: 'dlh', n: 'Dinas Lingkungan Hidup', sla: 48, k: ['sampah', 'limbah', 'bau', 'polusi', 'tpa', 'tps', 'sungai'] },
+=======
+  { id: 'pu', n: 'Dinas Pekerjaan Umum', sla: 72, k: ['jalan', 'berlubang', 'lubang', 'aspal', 'jembatan', 'drainase', 'selokan', 'banjir', 'trotoar'] },
+  { id: 'hub', n: 'Dinas Perhubungan', sla: 48, k: ['macet', 'lalu lintas', 'lampu merah', 'rambu', 'angkot', 'parkir', 'kecelakaan', 'bus'] },
+  { id: 'dlh', n: 'Dinas Lingkungan Hidup', sla: 48, k: ['sampah', 'limbah', 'bau', 'polusi', 'tpa', 'sungai'] },
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
   { id: 'kes', n: 'Dinas Kesehatan', sla: 24, k: ['rumah sakit', 'puskesmas', 'obat', 'dokter', 'wabah', 'demam', 'posyandu'] },
   { id: 'duk', n: 'Dinas Kependudukan', sla: 96, k: ['ktp', 'kk', 'akta', 'kartu keluarga', 'kependudukan', 'domisili'] },
   { id: 'sos', n: 'Dinas Sosial', sla: 24, k: ['bantuan', 'bansos', 'lansia', 'terlantar', 'darurat', 'miskin', 'korban'] },
   { id: 'ins', n: 'Inspektorat', sla: 72, k: ['pungli', 'korupsi', 'suap', 'pungutan', 'gratifikasi', 'calo'] },
+<<<<<<< HEAD
   { id: 'pen', n: 'Dinas Penerangan Jalan', sla: 48, k: ['lampu jalan', 'padam', 'gelap', 'listrik', 'pju', 'mati lampu'] }
+=======
+  { id: 'pen', n: 'Dinas Penerangan Jalan', sla: 48, k: ['lampu jalan', 'padam', 'gelap', 'listrik', 'pju'] }
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
 ];
 
 const ST = ['Diterima', 'Terverifikasi', 'Diproses', 'Selesai'];
@@ -76,6 +86,7 @@ const fake = () => ({
 
 
 /* ==========================================
+<<<<<<< HEAD
    1b. KONFIGURASI INTEGRASI & PENYIMPANAN
    Isi CFG.aiEndpoint dengan URL layanan klasifikasi (mis. IndoBERTweet)
    untuk mengganti klasifikator simulasi. Kosong = klasifikator lokal.
@@ -103,6 +114,8 @@ function load() {
 
 
 /* ==========================================
+=======
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
    2. VOICE SYNTHESIS & TOAST NOTIFICATION
    ========================================== */
 function say(m) {
@@ -152,6 +165,7 @@ function renderLog() {
       .join('') || '<li>Belum ada permintaan.</li>';
 }
 
+<<<<<<< HEAD
 /* JWT HS256 sungguhan (Web Crypto). Kunci hidup di peramban sehingga
    ini tetap simulasi gateway: produksi memakai kunci di KrakenD/IdP. */
 const u64 = (s) => btoa(s).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
@@ -187,17 +201,30 @@ async function gw(route, auth) {
   if (auth && !c) {
     code = 401;
     S.claims = null;
+=======
+function gw(route, auth) {
+  const t = Date.now();
+  hits[route] = (hits[route] || []).filter((x) => t - x < 1e4);
+  let code = 200;
+
+  if (auth && !S.tok) {
+    code = 401;
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
   } else if (hits[route].length >= 8) {
     code = 429;
   } else {
     hits[route].push(t);
+<<<<<<< HEAD
     if (c) S.claims = c;
+=======
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
   }
 
   glog.unshift({ t, route, code });
   glog.length = Math.min(glog.length, 8);
   renderLog();
 
+<<<<<<< HEAD
   if (code === 401) say('Gateway menolak (401): token JWT tidak ada atau kedaluwarsa. Masuk di Dasbor instansi.');
   if (code === 429) say('Gateway membatasi laju permintaan (429). Coba lagi beberapa detik lagi.');
   return code === 200;
@@ -228,6 +255,21 @@ async function emit(ev, t) {
     res = 'gagal: URL tidak terjangkau';
   }
   WL.unshift(`${fmt(now())} ${ev} ${t.id} → ${HK} (${res})`);
+=======
+  if (code === 401) {
+    say('Gateway menolak: token JWT tidak ada. Masuk dahulu di Dasbor instansi.');
+  }
+  if (code === 429) {
+    say('Gateway membatasi laju permintaan. Coba lagi beberapa detik lagi.');
+  }
+
+  return code === 200;
+}
+
+function emit(ev, t) {
+  if (!HK) return;
+  WL.unshift(`${fmt(now())} ${ev} ${t.id} → ${HK} (simulasi terkirim)`);
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
   WL.length = Math.min(WL.length, 6);
   $('#wlog').innerHTML = WL.map((x) => `<li>${esc(x)}</li>`).join('');
 }
@@ -272,6 +314,7 @@ async function unseal(v, pw) {
 /* ==========================================
    5. CLASSIFICATION & ENTITY EXTRACTION (AI)
    ========================================== */
+<<<<<<< HEAD
 const norm = (x) => x.toLowerCase().replace(/(.)\1{2,}/g, '$1$1').replace(/[^a-z0-9]+/g, ' ');
 const hasKw = (x, k) => new RegExp('(^| )' + k + '(nya|an|lah|kah)?( |$)').test(' ' + x + ' ');
 
@@ -281,6 +324,13 @@ function classify(x) {
   const r = [];
   OPD.forEach((o) => {
     const h = o.k.filter((k) => hasKw(x, k)).length;
+=======
+function classify(x) {
+  x = x.toLowerCase();
+  const r = [];
+  OPD.forEach((o) => {
+    const h = o.k.filter((k) => x.includes(k)).length;
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
     if (h) r.push({ id: o.id, p: 1 - Math.pow(0.5, h) });
   });
   r.sort((a, b) => b.p - a.p);
@@ -288,6 +338,7 @@ function classify(x) {
   return { labels: r.filter((l) => l.p >= 0.5), top, auto: top >= 0.7 };
 }
 
+<<<<<<< HEAD
 // Titik integrasi model nyata: POST {text} -> {labels:[{id,p}]}. Belum diuji terhadap layanan sungguhan.
 async function classifyRemote(text) {
   const r = await fetch(CFG.aiEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
@@ -312,6 +363,8 @@ function entity(d) {
   return '';
 }
 
+=======
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
 function ai() {
   const d = $('#desc').value.trim();
   const o = $('#ai');
@@ -320,6 +373,7 @@ function ai() {
     return;
   }
   const c = classify(d);
+<<<<<<< HEAD
   const en = entity(d);
   const L = $('#loc');
   if (en && (!L.value || L.dataset.auto)) {
@@ -327,11 +381,31 @@ function ai() {
     L.dataset.auto = '1';
   }
   const eHtml = en ? '<p class="hint">Entitas lokasi terekstrak: <b>' + esc(en) + '</b></p>' : '';
+=======
+
+  // Regex Ekstraksi Entitas Lokasi Otomatis
+  const locMatch = d.match(
+    /(jl\.?|jalan|desa|kec\.?|kecamatan|kab\.?|kabupaten|rs|rumah sakit|kampus|pasar)\s+[a-zA-Z0-9 ]+/i
+  );
+  let eHtml = '';
+  if (locMatch) {
+    eHtml = '<p class="hint">Entitas terekstrak otomatis: <b>' + esc(locMatch[0].trim()) + '</b></p>';
+    if (!$('#loc').value) $('#loc').value = locMatch[0].trim();
+  }
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
 
   o.innerHTML = c.labels.length
     ? c.labels.map((l) => `<span class="chip">${esc(opdName(l.id))} ${Math.round(l.p * 100)}%</span>`).join('') +
       eHtml +
+<<<<<<< HEAD
       `<p class="hint">${c.auto ? 'Keyakinan cukup: tiket dirutekan otomatis.' : 'Keyakinan di bawah 70%: petugas meninjau terlebih dahulu.'}</p>`
+=======
+      `<p class="hint">${
+        c.auto
+          ? 'Keyakinan cukup: tiket dirutekan otomatis.'
+          : 'Keyakinan di bawah 70%: petugas meninjau terlebih dahulu.'
+      }</p>`
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
     : eHtml + '<p class="hint">Belum ada kategori terdeteksi. Petugas akan meninjau laporan ini.</p>';
 }
 
@@ -340,13 +414,21 @@ function ai() {
    6. MANAJEMEN TIKET & SLA
    ========================================== */
 function mk(o) {
+<<<<<<< HEAD
   const c = o.cls || classify(o.desc);
+=======
+  const c = classify(o.desc);
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
   const opd = c.auto ? c.labels.map((l) => l.id) : [];
   const hrs = c.auto ? Math.min(...opd.map((i) => OPD.find((x) => x.id === i).sla)) : 24;
   const t0 = o.t || now();
 
   const t = {
+<<<<<<< HEAD
     id: 'LA-2026-' + String(++seq).padStart(4, '0') + '-' + code(),
+=======
+    id: 'LA-2026-' + String(++seq).padStart(4, '0'),
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
     wil: o.wil,
     desc: o.desc,
     loc: o.loc || '',
@@ -374,7 +456,10 @@ function mk(o) {
   };
 
   T.unshift(t);
+<<<<<<< HEAD
   save();
+=======
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
   return t;
 }
 
@@ -383,6 +468,7 @@ function chk(t) {
     t.esc = true;
     t.trail.push({ t: now(), s: 'Peringatan eskalasi: tenggat SLA terlampaui', by: 'Sistem SLA' });
     emit('sla.breached', t);
+<<<<<<< HEAD
     save();
     return true;
   }
@@ -546,12 +632,82 @@ async function submit() {
   } finally {
     btn.disabled = false;
   }
+=======
+  }
+}
+
+async function submit() {
+  if (!gw('POST /reports')) return;
+
+  const d = $('#desc').value.trim();
+  const pw = $('#pw').value;
+  const anon = $('#anon').checked;
+  const f = $('#file').files[0];
+
+  if (d.length < 15) return say('Uraikan laporan minimal 15 karakter.');
+  if (pw.length < 8) return say('Kata sandi brankas minimal 8 karakter.');
+  if (f && f.size > 1048576) return say('Lampiran melebihi 1 MB.');
+
+  const p = { detail: $('#sens').value };
+  if (!anon) {
+    p.nama = $('#nama').value;
+    p.nik = $('#nik').value;
+    p.kontak = $('#kontak').value;
+    p.alamat = $('#alamat').value;
+  }
+
+  if (f) {
+    p.lampiran = {
+      nama: f.name,
+      ukuran: f.size,
+      data: await new Promise((r) => {
+        const fr = new FileReader();
+        fr.onload = () => r(fr.result);
+        fr.readAsDataURL(f);
+      })
+    };
+  }
+
+  let meta = null;
+  if (anon) {
+    meta = hex(
+      await crypto.subtle.digest(
+        'SHA-256',
+        new Uint8Array([...rnd(16), ...new TextEncoder().encode(navigator.userAgent + screen.width)])
+      )
+    );
+  }
+
+  const vault = await seal(p, pw);
+  const t = mk({ wil: $('#wil').value, desc: d, loc: $('#loc').value, anon, vault, meta });
+
+  emit('ticket.created', t);
+
+  $('#res').innerHTML = `<div class="card ok">
+    <h2>Laporan terkirim</h2>
+    <p>Simpan nomor registrasi ini untuk melacak laporan Anda:</p>
+    <p><span class="plate">${t.id}</span></p>
+    <p>${
+      t.review
+        ? 'Keyakinan model rendah, laporan masuk antrean tinjauan petugas.'
+        : 'Dirutekan otomatis ke ' + esc(t.opd.map(opdName).join(', ')) + '.'
+    } Tenggat SLA: ${fmt(t.due)}.</p>
+    <p class="hint mono">Yang diterima server: ${esc(t.vault.ct.slice(0, 48))}…</p>
+  </div>`;
+
+  ['#desc', '#loc', '#sens', '#pw', '#nama', '#nik', '#kontak', '#alamat', '#file'].forEach(
+    (s) => ($(s).value = '')
+  );
+  ai();
+  say('Laporan terkirim. Nomor tiket ' + t.id);
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
 }
 
 
 /* ==========================================
    7. PELACAKAN TIKET & PENILAIAN CSAT
    ========================================== */
+<<<<<<< HEAD
 function rate(id, n) {
   const t = T.find((x) => x.id === id);
   if (!t) return;
@@ -575,13 +731,34 @@ async function lookup(id, silent) {
     return;
   }
   const t = T.find((x) => x.id === id);
+=======
+window.rate = function (id, s) {
+  const t = T.find((x) => x.id === id);
+  if (t) {
+    t.csat = s;
+    lookup();
+    say('Terima kasih atas penilaian Anda.');
+    if ($('#dash').hidden === false) dash();
+  }
+};
+
+async function lookup() {
+  if (!gw('GET /reports/{id}')) return;
+
+  const t = T.find((x) => x.id === $('#tid').value.trim().toUpperCase());
+  const o = $('#tout');
+
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
   if (!t) {
     o.innerHTML = '<p role="alert" class="bad">Nomor tiket tidak ditemukan.</p>';
     return;
   }
 
   chk(t);
+<<<<<<< HEAD
   markSeen(t);
+=======
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
   const i = ST.indexOf(t.status);
   const left = t.due - now();
   const pw = $('#pw2').value;
@@ -591,6 +768,7 @@ async function lookup(id, silent) {
     try {
       const p = await unseal(t.vault, pw);
       if (p.lampiran) {
+<<<<<<< HEAD
         DL = { att: p.lampiran };
         p.lampiran = p.lampiran.nama + ' (' + Math.round(p.lampiran.ukuran / 1024) + ' KB)';
       }
@@ -599,6 +777,16 @@ async function lookup(id, silent) {
       }`;
     } catch (e) {
       vh = '<p role="alert" class="bad">Kata sandi tidak cocok. Tanpa kunci yang benar, data tidak bisa dibuka siapa pun.</p>';
+=======
+        p.lampiran = p.lampiran.nama + ' (' + Math.round(p.lampiran.ukuran / 1024) + ' KB)';
+      }
+      vh = `<h3>Detail terenkripsi, terbuka di perangkat Anda</h3><pre>${esc(
+        JSON.stringify(p, null, 2)
+      )}</pre>`;
+    } catch (e) {
+      vh =
+        '<p role="alert" class="bad">Kata sandi tidak cocok. Tanpa kunci yang benar, data tidak bisa dibuka siapa pun.</p>';
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
     }
   }
 
@@ -613,6 +801,7 @@ async function lookup(id, silent) {
       <h3>Berikan Penilaian (CSAT)</h3>
       <p class="hint">Seberapa puas Anda dengan penanganan laporan ini?</p>
       <div class="row">
+<<<<<<< HEAD
         <button type="button" data-id="${t.id}" data-rate="5">Bagus (5)</button>
         <button type="button" data-id="${t.id}" data-rate="3">Cukup (3)</button>
         <button type="button" data-id="${t.id}" data-rate="1">Buruk (1)</button>
@@ -620,16 +809,45 @@ async function lookup(id, silent) {
     </div>`;
   } else if (t.csat) {
     csatHtml = `<p><b>Penilaian Pelayanan (CSAT):</b> ${t.csat}/5</p>`;
+=======
+        <button type="button" onclick="rate('${t.id}', 5)">Bagus (5)</button>
+        <button type="button" onclick="rate('${t.id}', 3)">Cukup (3)</button>
+        <button type="button" onclick="rate('${t.id}', 1)">Buruk (1)</button>
+      </div>
+    </div>`;
+  } else if (t.csat) {
+    csatHtml = `<div style="margin-top:1rem">
+      <p><b>Penilaian Pelayanan (CSAT):</b> ${t.csat}/5 Bintang</p>
+    </div>`;
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
   }
 
   o.innerHTML = `<div class="card">
     <span class="plate">${t.id}</span>
+<<<<<<< HEAD
     <ol class="steps">${ST.map((x, k) => `<li class="${k <= i ? 'done' : ''}"${k === i ? ' aria-current="step"' : ''}>${x}</li>`).join('')}</ol>
     <p><b>Ditangani oleh:</b> ${esc(who)}</p>
     <p><b>Tenggat SLA:</b> ${fmt(t.due)}${t.status !== 'Selesai' && left > 0 ? ' (sisa ' + Math.ceil(left / 36e5) + ' jam)' : ''}</p>
     ${t.esc ? '<p class="bad" role="alert">Peringatan eskalasi: tenggat SLA terlampaui.</p>' : ''}
     <h3>Jejak audit</h3>
     <ol class="trail">${t.trail.map((x) => `<li><time>${fmt(x.t)}</time> ${esc(x.s)} <span class="hint">oleh ${esc(x.by)}</span></li>`).join('')}</ol>
+=======
+    <ol class="steps">${ST.map(
+      (s, k) => `<li class="${k <= i ? 'done' : ''}"${k === i ? ' aria-current="step"' : ''}>${s}</li>`
+    ).join('')}</ol>
+    <p><b>Ditangani oleh:</b> ${esc(who)}</p>
+    <p><b>Tenggat SLA:</b> ${fmt(t.due)}${
+    t.status !== 'Selesai' && left > 0 ? ' (sisa ' + Math.ceil(left / 36e5) + ' jam)' : ''
+  }</p>
+    ${t.esc ? '<p class="bad" role="alert">Peringatan eskalasi: tenggat SLA terlampaui.</p>' : ''}
+    <h3>Jejak audit</h3>
+    <ol class="trail">${t.trail
+      .map(
+        (x) =>
+          `<li><time>${fmt(x.t)}</time> ${esc(x.s)} <span class="hint">oleh ${esc(x.by)}</span></li>`
+      )
+      .join('')}</ol>
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
     ${vh}
     ${csatHtml}
   </div>`;
@@ -667,9 +885,15 @@ function row(t) {
   </article>`;
 }
 
+<<<<<<< HEAD
 // Simulasi Row-Level Security: satu-satunya predikat akses, dipakai semua kueri dan mutasi.
 const visible = (t, c) => !!c && t.wil === c.wil && (c.opd === 'all' || t.opd.includes(c.opd));
 const scope = () => T.filter((t) => visible(t, S.claims));
+=======
+function scope() {
+  return T.filter((t) => t.wil === S.wil && (S.opd === 'all' || t.opd.includes(S.opd)));
+}
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
 
 function dash() {
   T.forEach(chk);
@@ -684,6 +908,7 @@ function dash() {
     ['Laporan', L.length],
     ['Selesai', done],
     ['Kepatuhan SLA', (L.length ? Math.round((ok / L.length) * 100) : 100) + '%'],
+<<<<<<< HEAD
     ['Eskalasi SLA', L.length - ok],
     ['Rata-rata keyakinan AI', cf + '%'],
     ['Antrean tinjauan', L.filter((t) => t.review).length],
@@ -706,6 +931,23 @@ async function adv(id) {
   const t = T.find((x) => x.id === id);
   if (!t || !visible(t, S.claims)) return rlsDeny('PATCH /reports/{id}');
   if (t.review) return say('Tiket menunggu tinjauan: rutekan ke OPD terlebih dahulu.');
+=======
+    ['Rata-rata keyakinan AI', cf + '%'],
+    ['Antrean tinjauan', L.filter((t) => t.review).length],
+    ['Rata-rata CSAT', avg + '/5']
+  ]
+    .map(([a, b]) => `<div class="stat"><b>${b}</b><span>${a}</span></div>`)
+    .join('');
+
+  $('#list').innerHTML = L.length
+    ? L.map(row).join('')
+    : '<p>Belum ada laporan untuk filter ini.</p>';
+}
+
+function adv(id) {
+  if (!gw('PATCH /reports/{id}', true)) return;
+  const t = T.find((x) => x.id === id);
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
   const n = ST[ST.indexOf(t.status) + 1];
   if (!n) return;
   t.status = n;
@@ -714,6 +956,7 @@ async function adv(id) {
   dash();
 }
 
+<<<<<<< HEAD
 async function asg(id, o) {
   if (!(await gw('PATCH /reports/{id}', true))) return;
   const t = T.find((x) => x.id === id);
@@ -722,6 +965,19 @@ async function asg(id, o) {
   t.review = false;
   t.due = now() + OPD.find((x) => x.id === o).sla * 36e5;
   t.trail.push({ t: now(), s: 'Ditinjau petugas, dirutekan ke ' + opdName(o), by: 'Operator Pengaduan' });
+=======
+function asg(id, o) {
+  if (!gw('PATCH /reports/{id}', true)) return;
+  const t = T.find((x) => x.id === id);
+  t.opd = [o];
+  t.review = false;
+  t.due = now() + OPD.find((x) => x.id === o).sla * 36e5;
+  t.trail.push({
+    t: now(),
+    s: 'Ditinjau petugas, dirutekan ke ' + opdName(o),
+    by: 'Operator Pengaduan'
+  });
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
   emit('ticket.routed', t);
   dash();
 }
@@ -730,6 +986,7 @@ async function asg(id, o) {
 /* ==========================================
    9. SPESIFIKASI OPENAPI & SPEECH COMMANDS
    ========================================== */
+<<<<<<< HEAD
 const op = (s, pub) => ({
   summary: s,
   security: pub ? [] : [{ bearerAuth: [] }],
@@ -779,6 +1036,71 @@ const API = {
       Stats: { type: 'object', properties: { wilayah: { type: 'string' }, total: { type: 'integer' }, status: { type: 'object' }, eskalasi: { type: 'integer' }, antrean_tinjauan: { type: 'integer' } } },
       WebhookEvent: { type: 'object', properties: { payload: { type: 'object', properties: { event: { type: 'string' }, id: { type: 'string' }, wilayah: { type: 'string' }, opd: { type: 'array', items: { type: 'string' } }, status: { type: 'string' }, at: { type: 'string', format: 'date-time' } } }, signature: { type: 'string' } } }
     }
+=======
+const op = (s) => ({
+  summary: s,
+  security: [{ bearerAuth: [] }],
+  responses: {
+    '200': { description: 'Berhasil' },
+    '401': { description: 'Token JWT tidak valid' },
+    '429': { description: 'Batas laju terlampaui' }
+  }
+});
+
+const API = {
+  openapi: '3.1.0',
+  info: {
+    title: 'LaporAman Integration API',
+    version: '1.0.0',
+    description: 'Pertukaran data pengaduan untuk ekosistem SPBE'
+  },
+  servers: [{ url: 'https://api.laporaman.example/v1' }],
+  paths: {
+    '/reports': {
+      get: op('Daftar laporan pada wilayah dan OPD token'),
+      post: {
+        ...op('Buat laporan terenkripsi sisi klien'),
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['wilayah', 'deskripsi', 'vault'],
+                properties: {
+                  wilayah: { type: 'string' },
+                  deskripsi: { type: 'string' },
+                  lokasi: { type: 'string' },
+                  anonim: { type: 'boolean' },
+                  vault: {
+                    type: 'object',
+                    properties: { salt: { type: 'string' }, iv: { type: 'string' }, ct: { type: 'string' } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/reports/{id}': {
+      get: {
+        ...op('Lacak status, jejak audit, dan tenggat SLA'),
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }]
+      },
+      patch: {
+        ...op('Perbarui status atau rutekan ulang'),
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }]
+      }
+    },
+    '/stats': { get: op('Rekap kepatuhan SLA dan volume laporan') },
+    '/webhooks': {
+      post: op('Daftarkan URL webhook untuk ticket.created, ticket.updated, ticket.routed, sla.breached')
+    }
+  },
+  components: {
+    securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } }
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
   }
 };
 
@@ -794,22 +1116,33 @@ function route() {
     a.hash === '#' + k ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')
   );
   $('#v-' + k + ' h1').focus({ preventScroll: true });
+<<<<<<< HEAD
   document.title = $('#v-' + k + ' h1').textContent + ' · LaporAman';
 }
 
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null;
+=======
+}
+
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
 
 function listen(cb) {
   if (!SR) return say('Pengenalan suara tidak didukung peramban ini. Coba Chrome atau Edge.');
   const r = new SR();
   r.lang = 'id-ID';
   r.onresult = (e) => cb(e.results[0][0].transcript);
+<<<<<<< HEAD
   r.onerror = (e) => say(e.error === 'not-allowed' ? 'Izin mikrofon ditolak. Aktifkan di pengaturan peramban.' : 'Suara tidak tertangkap. Coba lagi.');
+=======
+  r.onerror = () => say('Suara tidak tertangkap. Periksa izin mikrofon.');
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
   r.start();
   say('Mendengarkan…');
 }
 
+<<<<<<< HEAD
 // Perintah suara kontinu: aktif sampai dimatikan (tombol atau ucapan "berhenti").
 function startVoice() {
   if (!SR) {
@@ -845,6 +1178,8 @@ function stopVoice() {
   $('#vc').setAttribute('aria-pressed', 'false');
 }
 
+=======
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
 function zoom(d) {
   const z = $('#zoom');
   z.value = Math.min(200, Math.max(100, +z.value + d));
@@ -852,6 +1187,7 @@ function zoom(d) {
 }
 
 function cmd(x) {
+<<<<<<< HEAD
   x = x.toLowerCase().trim();
   const w = x.match(/^(tulis|isi laporan)\s+(.+)/);
   if (w) {
@@ -862,12 +1198,19 @@ function cmd(x) {
     say('Teks ditambahkan ke isi laporan.');
   } else if (/berhenti|matikan suara/.test(x)) { stopVoice(); say('Perintah suara dimatikan.'); }
   else if (x.includes('anonim')) $('#anon').click();
+=======
+  x = x.toLowerCase();
+  if (x.includes('anonim')) $('#anon').click();
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
   else if (x.includes('kirim')) submit();
   else if (x.includes('lacak') || x.includes('pelacak')) go('lacak');
   else if (x.includes('dasbor')) go('dasbor');
   else if (x.includes('integrasi')) go('integrasi');
   else if (x.includes('tentang')) go('tentang');
+<<<<<<< HEAD
   else if (x.includes('lokasi')) $('#geo').click();
+=======
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
   else if (x.includes('lapor')) go('lapor');
   else if (x.includes('kontras')) $('#hc').click();
   else if (x.includes('perbesar')) zoom(25);
@@ -885,6 +1228,7 @@ function tog(id, fn) {
     const on = b.getAttribute('aria-pressed') !== 'true';
     b.setAttribute('aria-pressed', on);
     fn(on);
+<<<<<<< HEAD
     pref();
   };
 }
@@ -895,16 +1239,30 @@ function pref() {
   } catch (e) {}
 }
 
+=======
+  };
+}
+
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
 tog('#hc', (on) => document.documentElement.toggleAttribute('data-contrast', on));
 tog('#dys', (on) => document.documentElement.toggleAttribute('data-dys', on));
 
 $('#zoom').oninput = (e) => {
   document.documentElement.style.setProperty('--z', e.target.value / 100);
   $('#zo').textContent = e.target.value + '%';
+<<<<<<< HEAD
   pref();
 };
 
 tog('#vc', (on) => (on ? startVoice() : (stopVoice(), say('Perintah suara dimatikan.'))));
+=======
+};
+
+$('#vc').onclick = () => {
+  S.voice = true;
+  listen(cmd);
+};
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
 
 $('#mic').onclick = () =>
   listen((t) => {
@@ -930,11 +1288,16 @@ $('#anon').onchange = (e) =>
   });
 
 $('#send').onclick = submit;
+<<<<<<< HEAD
 $('#trk').onclick = () => lookup();
+=======
+$('#trk').onclick = lookup;
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
 $('#tid').onkeydown = (e) => {
   if (e.key === 'Enter') lookup();
 };
 
+<<<<<<< HEAD
 $('#login').onclick = async () => {
   S.tok = await signJWT({ sub: 'operator', wil: $('#dwil').value, opd: $('#dopd').value, iat: Date.now(), exp: Date.now() + 36e5 });
   S.claims = await verifyJWT(S.tok);
@@ -951,11 +1314,29 @@ $('#logout').onclick = () => {
   $('#logout').hidden = true;
   $('#tok').textContent = 'Belum masuk. Gateway menolak permintaan tanpa token.';
   say('Token dihapus. Anda telah keluar.');
+=======
+$('#login').onclick = () => {
+  S.wil = $('#dwil').value;
+  S.opd = $('#dopd').value;
+  const u = (s) => btoa(s).replace(/=/g, '');
+  S.tok =
+    u('{"alg":"RS256","typ":"JWT"}') +
+    '.' +
+    u(JSON.stringify({ sub: 'operator', wil: S.wil, opd: S.opd, exp: Date.now() + 36e5 })) +
+    '.' +
+    b64(rnd(12)).replace(/=/g, '');
+  $('#tok').textContent = 'Token aktif: ' + S.tok.slice(0, 56) + '…';
+  $('#dash').hidden = false;
+  if (gw('GET /reports', true)) dash();
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
 };
 
 $('#skew').onclick = () => {
   skew += 24;
+<<<<<<< HEAD
   save();
+=======
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
   $('#skew').textContent = 'Majukan waktu simulasi 24 jam (maju ' + skew + ' jam)';
   if (S.tok) dash();
   say('Waktu simulasi maju ' + skew + ' jam.');
@@ -969,6 +1350,7 @@ $('#list').onclick = (e) => {
 };
 
 $('#hset').onclick = () => {
+<<<<<<< HEAD
   const v = $('#hook').value.trim();
   if (!v) { HK = ''; return say('Webhook dihapus.'); }
   let u = null;
@@ -984,6 +1366,24 @@ $('#getstat').onclick = async () => {
   const by = (k) => L.reduce((a, t) => ((a[t[k]] = (a[t[k]] || 0) + 1), a), {});
   $('#stat').textContent = JSON.stringify(
     { wilayah: WIL[S.claims.wil], total: L.length, status: by('status'), eskalasi: L.filter((t) => t.esc).length, antrean_tinjauan: L.filter((t) => t.review).length },
+=======
+  HK = $('#hook').value.trim();
+  say(HK ? 'Webhook disimpan.' : 'Webhook dihapus.');
+};
+
+$('#getstat').onclick = () => {
+  if (!gw('GET /stats', true)) return;
+  const L = scope();
+  const by = (k) => L.reduce((a, t) => ((a[t[k]] = (a[t[k]] || 0) + 1), a), {});
+  $('#stat').textContent = JSON.stringify(
+    {
+      wilayah: WIL[S.wil],
+      total: L.length,
+      status: by('status'),
+      eskalasi: L.filter((t) => t.esc).length,
+      antrean_tinjauan: L.filter((t) => t.review).length
+    },
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
     null,
     2
   );
@@ -1011,8 +1411,12 @@ $('#dopd').innerHTML =
 
 $('#oas').textContent = JSON.stringify(API, null, 2);
 
+<<<<<<< HEAD
 // Mock Data Awal (hanya saat penyimpanan lokal kosong)
 if (!load()) {
+=======
+// Mock Data Awal
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
 mk({
   wil: 'sby',
   desc: 'Jalan berlubang parah di depan rumah sakit, macet dan sering kecelakaan',
@@ -1044,6 +1448,7 @@ mk({
   vault: fake(),
   t: Date.now() - 36e5
 });
+<<<<<<< HEAD
 }
 
 renderLog();
@@ -1094,3 +1499,8 @@ try {
 } catch (e) {}
 renderMine();
 badge();
+=======
+
+renderLog();
+route();
+>>>>>>> 727baf7617f4ddf0d980fc09ef48beae966f53bc
