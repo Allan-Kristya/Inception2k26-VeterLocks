@@ -95,8 +95,61 @@ Gunakan kontrol pada bagian atas aplikasi untuk mengubah ukuran teks (100–200%
 - Saran klasifikasi saat ini berbasis aturan/kata kunci untuk demonstrasi, bukan model IndoBERTweet atau model ML terlatih; semua laporan tetap memerlukan verifikasi manusia.
 - Dikte/perintah suara menggunakan Web Speech API browser, bukan Whisper Large v3.
 - Integrasi KrakenD, Kubernetes, aplikasi mobile native, push notification, dan konektor SPBE/Smart City spesifik instansi belum menjadi bagian deployment demo ini.
-- Kebijakan PostgreSQL RLS tersedia pada implementasi backend, tetapi pengujian isolasi RLS independen, penetration test, threat modeling, audit hukum/UU PDP, dan audit keamanan formal belum dilakukan.
+- Policy PostgreSQL RLS telah dibuat dan ENABLE/FORCE pada tabel `reports`, `report_events`, dan `webhook_subscriptions`. Namun, role runtime `laporaman_app` pada database Neon saat rilis ini memiliki atribut `BYPASSRLS=true`, sehingga policy RLS belum menjadi pembatas efektif untuk koneksi aplikasi. Pembatasan tenant/OPD saat ini juga bergantung pada otorisasi dan filter di backend. Perbaikan privilege menjadi `NOBYPASSRLS` serta pengujian akses silang tenant/OPD wajib dilakukan sebelum menggunakan data non-demo; perbaikan dan pengujian tersebut belum dinyatakan selesai. Penetration test, threat modeling, audit hukum/UU PDP, dan audit keamanan formal juga belum dilakukan.
 - Sebelum menerima data masyarakat sungguhan diperlukan hardening, prosedur backup-restore dan pemulihan kunci, pengujian lintas tenant/OPD, serta review keamanan dan legal.
+
+## AI Use Declaration
+
+### Penggunaan AI selama pengembangan dan persiapan rilis
+
+Tim menggunakan **ChatGPT** sebagai alat bantu pada tahap persiapan rilis v2.0.1, terutama untuk diskusi teknis/arsitektur, peninjauan source code, bantuan penelusuran masalah saat deployment, serta penyusunan dan penyuntingan dokumentasi. Saran atau keluaran AI diperlakukan sebagai bahan bantu, bukan keputusan final; tim tetap meninjau perubahan dan melakukan pengujian sebelum menggunakannya.
+
+Deklarasi ini menjelaskan penggunaan AI yang diketahui dalam proses review dan persiapan rilis. Apabila anggota tim menggunakan alat AI lain atau menggunakannya untuk bagian implementasi lain, nama alat dan cakupannya perlu ditambahkan oleh tim sebelum submission.
+
+### Penggunaan AI di aplikasi v2.0.1 yang dideploy
+
+- **Tidak ada layanan LLM/API AI eksternal yang dipanggil oleh deployment publik v2.0.1 untuk memproses atau mengklasifikasikan laporan.**
+- Saran triase pada frontend menggunakan pencocokan kata kunci deterministik (`local-keyword-demo`), bukan inferensi IndoBERTweet atau model machine learning terlatih. Nilai saran dari browser bukan keputusan final.
+- Backend menandai laporan untuk tinjauan manusia dan tidak melakukan routing otomatis berdasarkan skor/label yang dikirim dari browser. Verifikasi serta pemilihan OPD dilakukan petugas.
+- IndoBERTweet dan Whisper Large v3 merupakan rencana/komponen opsional pada direktori `enterprise/`; model tersebut tidak disertakan atau dijalankan pada deployment v2.0.1.
+- Fitur dikte/perintah suara pada aplikasi menggunakan Web Speech API yang tersedia melalui browser. Ketersediaan dan pemrosesan suara mengikuti dukungan serta kebijakan browser/platform yang digunakan; fitur ini bukan integrasi Whisper Large v3.
+
+## Third-Party Declaration
+
+LaporAman v2.0.1 menggunakan layanan hosting, database, pustaka perangkat lunak, dan API bawaan browser dari pihak ketiga. Komponen tersebut tetap menjadi milik/pengelolaan penyedia masing-masing dan digunakan sesuai ketentuan serta lisensinya.
+
+### Layanan pihak ketiga pada deployment publik
+
+| Pihak/layanan | Penggunaan pada v2.0.1 | Referensi |
+|---|---|---|
+| [Render](https://render.com/) | Hosting dan deployment Docker untuk backend/API serta frontend yang disajikan oleh backend. | [Terms of Service](https://render.com/terms) |
+| [Neon](https://neon.com/) | Managed PostgreSQL untuk penyimpanan data aplikasi pada deployment publik. | [Security & sub-processors](https://neon.com/security) · [Documentation](https://neon.com/docs) |
+| Browser pengguna | Web Crypto API untuk operasi kriptografi, Web Speech API untuk dikte/perintah suara, serta Notifications API bila didukung dan diizinkan pengguna. | Implementasi mengikuti dukungan dan kebijakan browser masing-masing. |
+
+### Pustaka runtime backend yang dideklarasikan langsung
+
+Daftar berikut merangkum dependensi langsung pada `backend/requirements.txt` dan `backend/requirements-postgres.txt`. Dependensi transitif yang dipasang oleh masing-masing paket tidak dirinci satu per satu di tabel ini.
+
+| Pustaka | Fungsi | Lisensi proyek |
+|---|---|---|
+| [FastAPI](https://github.com/fastapi/fastapi) | Framework REST API | MIT |
+| [Uvicorn](https://github.com/Kludex/uvicorn) | ASGI application server | BSD-3-Clause |
+| [SQLAlchemy](https://github.com/sqlalchemy/sqlalchemy) | ORM dan akses database | MIT |
+| [PyJWT](https://github.com/jpadilla/pyjwt) | Pembuatan dan validasi JWT | MIT |
+| [cryptography](https://github.com/pyca/cryptography) | Operasi kriptografi pada backend | Apache-2.0 OR BSD-3-Clause |
+| [HTTPX](https://github.com/encode/httpx) | HTTP client untuk integrasi/request backend | BSD-3-Clause |
+| [Psycopg 3](https://github.com/psycopg/psycopg) (`psycopg[binary]`) | Driver PostgreSQL | LGPL-3.0 |
+
+Lisensi dan pemberitahuan hak cipta tetap mengikuti distribusi resmi setiap pustaka. Versi dependensi pada file requirements menggunakan rentang versi; untuk inventaris lisensi yang sepenuhnya presisi pada suatu build, buat dan simpan Software Bill of Materials (SBOM) dari environment hasil instalasi yang digunakan.
+
+### Komponen opsional dan aset eksternal yang bukan bagian runtime utama
+
+- Direktori `enterprise/ai_service/` memiliki dependensi opsional seperti PyTorch, Transformers, Safetensors, dan faster-whisper untuk eksplorasi integrasi model. Dependensi dan model tersebut **tidak termasuk dalam deployment publik v2.0.1**. Sebelum mengaktifkannya, tim perlu memeriksa lisensi pustaka, lisensi/ketentuan bobot model, sumber dataset, serta kewajiban atribusi masing-masing.
+- Frontend aktif yang disajikan dari direktori `frontend/` tidak mendeklarasikan pustaka JavaScript pihak ketiga melalui CDN pada halaman utamanya; fitur kriptografi dan suara menggunakan API browser. `package.json` hanya menyediakan script smoke test dan tidak mendeklarasikan dependency runtime frontend.
+- File `index.html` di root repository memiliki referensi Google Fonts untuk halaman/versi terpisah. Entry point aplikasi publik v2.0.1 dilayani dari `frontend/index.html`, yang tidak memuat referensi Google Fonts tersebut.
+- Halaman dokumentasi API `/docs` menggunakan Swagger UI yang disediakan oleh mekanisme dokumentasi FastAPI. Aset dokumentasi tersebut merupakan komponen pihak ketiga yang terpisah dari alur pelaporan utama.
+
+Deklarasi ini merangkum komponen yang teridentifikasi pada source dan konfigurasi release v2.0.1; deklarasi ini bukan pengganti pemeriksaan lisensi menyeluruh/SBOM untuk setiap build atau deployment.
 
 ## Informasi teknis
 
