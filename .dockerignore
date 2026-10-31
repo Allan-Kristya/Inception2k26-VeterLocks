@@ -1,0 +1,47 @@
+# Repository metadata and secrets
+.git
+**/.git
+.env
+.env.*
+
+# Local Python environments and caches
+.venv
+.venv-*
+**/.venv
+**/.venv-*
+venv
+**/venv
+__pycache__
+**/__pycache__
+*.py[cod]
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Frontend dependencies
+node_modules
+**/node_modules
+
+# Local data and backup artefacts
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.dump
+*.backup*
+*.bak
+laporaman-data
+
+# Key material and OS artefacts
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+.DS_Store
+Thumbs.db
+
+# Legacy source is not part of the active Docker build
+legacy-source

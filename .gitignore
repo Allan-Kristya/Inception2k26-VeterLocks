@@ -1,0 +1,54 @@
+# Local environment files (keep only documented templates)
+.env
+.env.*
+!.env.example
+!enterprise/.env.enterprise.example
+
+# Python environments and generated files
+.venv/
+.venv-*/
+venv/
+**/.venv/
+**/.venv-*/
+**/venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+
+# Frontend dependencies and generated output
+node_modules/
+dist/
+build/
+
+# Local databases, journals, backups and dumps
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.dump
+*.dump.gz
+*.backup
+*.backup.*
+*.bak
+laporaman-data/
+instance/
+
+# Private keys, certificates and secret material
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.secret
+private-keys/
+.keys/
+
+# OS/editor artefacts
+.DS_Store
+Thumbs.db
+.vscode/

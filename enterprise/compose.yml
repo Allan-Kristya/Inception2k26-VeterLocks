@@ -1,0 +1,149 @@
+name: laporaman-enterprise
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: laporaman
+      POSTGRES_USER: laporaman_admin
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?Set POSTGRES_ADMIN_PASSWORD}
+      POSTGRES_RUNTIME_PASSWORD: ${POSTGRES_RUNTIME_PASSWORD:?Set POSTGRES_RUNTIME_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init-roles.sh:/docker-entrypoint-initdb.d/01-init-roles.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U laporaman_admin -d laporaman"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks: [core]
+
+  migrate:
+    image: flyway/flyway:10-alpine
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["-url=jdbc:postgresql://db:5432/laporaman", "-user=laporaman_admin", "-password=${POSTGRES_ADMIN_PASSWORD}", "-connectRetries=30", "migrate"]
+    volumes:
+      - ./migrations:/flyway/sql:ro
+    networks: [core]
+    restart: "no"
+
+  keygen:
+    build: ./backend
+    user: "0:0"
+    command: ["sh", "-c", "python /app/scripts/generate_keys.py && chown -R 10001:10001 /run/jwt && chmod 600 /run/jwt/jwt-private.pem"]
+    volumes:
+      - jwt_keys:/run/jwt
+    networks: [core]
+    restart: "no"
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      keygen:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgresql+psycopg://laporaman_runtime:${POSTGRES_RUNTIME_PASSWORD}@db:5432/laporaman
+      JWT_PRIVATE_KEY_PATH: /run/jwt/jwt-private.pem
+      JWT_PUBLIC_KEY_PATH: /run/jwt/jwt-public.pem
+      JWKS_PATH: /run/jwt/jwks.json
+      JWT_ISSUER: https://api.laporaman.local
+      JWT_AUDIENCE: laporaman-operator
+      JWT_TTL_MINUTES: ${JWT_TTL_MINUTES:-10}
+      WEBHOOK_ENCRYPTION_KEY: ${WEBHOOK_ENCRYPTION_KEY:?Generate a Fernet key}
+      WEBHOOK_ALLOWED_HOSTS: ${WEBHOOK_ALLOWED_HOSTS:-}
+      DEFAULT_SLA_HOURS: ${DEFAULT_SLA_HOURS:-24}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
+    volumes:
+      - jwt_keys:/run/jwt:ro
+    networks: [core]
+    read_only: true
+    tmpfs: [/tmp:size=64m,noexec,nosuid]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+
+  worker:
+    build: ./backend
+    command: ["python", "-m", "app.worker"]
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgresql+psycopg://laporaman_runtime:${POSTGRES_RUNTIME_PASSWORD}@db:5432/laporaman
+      WEBHOOK_ENCRYPTION_KEY: ${WEBHOOK_ENCRYPTION_KEY:?Generate a Fernet key}
+      WEBHOOK_ALLOWED_HOSTS: ${WEBHOOK_ALLOWED_HOSTS:-}
+      WORKER_INTERVAL_SECONDS: ${WORKER_INTERVAL_SECONDS:-2}
+    networks: [core, webhook_egress]
+    read_only: true
+    tmpfs: [/tmp:size=64m,noexec,nosuid]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+
+  bootstrap:
+    profiles: ["bootstrap"]
+    build: ./backend
+    entrypoint: ["python", "-m", "app.bootstrap"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      ADMIN_DATABASE_URL: postgresql+psycopg://laporaman_admin:${POSTGRES_ADMIN_PASSWORD}@db:5432/laporaman
+    networks: [core]
+    restart: "no"
+
+  gateway:
+    image: devopsfaith/krakend:2.11
+    restart: unless-stopped
+    depends_on: [api, keygen]
+    command: ["run", "-c", "/etc/krakend/krakend.json"]
+    ports:
+      - "${GATEWAY_BIND:-127.0.0.1}:8080:8080"
+    volumes:
+      - ./gateway/krakend.json:/etc/krakend/krakend.json:ro
+      - jwt_keys:/run/jwt:ro
+    networks: [edge, core]
+    security_opt: [no-new-privileges:true]
+
+  ai:
+    profiles: ["ml"]
+    build:
+      context: ./ai_service
+      args:
+        INSTALL_ML: ${AI_INSTALL_ML:-0}
+    restart: unless-stopped
+    environment:
+      AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:?Set AI_SERVICE_TOKEN}
+      INDOBERTWEET_MODEL_PATH: /models/indobertweet
+      WHISPER_MODEL_PATH: /models/whisper-large-v3
+      AI_CONFIDENCE_THRESHOLD: "0.70"
+      AI_LABEL_MAP_JSON: ${AI_LABEL_MAP_JSON}
+      WHISPER_DEVICE: ${WHISPER_DEVICE:-cpu}
+      WHISPER_COMPUTE_TYPE: ${WHISPER_COMPUTE_TYPE:-int8}
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+    volumes:
+      - ./models/indobertweet:/models/indobertweet:ro
+      - ./models/whisper-large-v3:/models/whisper-large-v3:ro
+    networks: [core]
+    tmpfs: [/tmp:size=512m,noexec,nosuid]
+    read_only: true
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+
+volumes:
+  pgdata:
+  jwt_keys:
+
+networks:
+  edge:
+    driver: bridge
+  core:
+    driver: bridge
+    internal: true
+  webhook_egress:
+    driver: bridge

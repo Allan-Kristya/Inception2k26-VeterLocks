@@ -1,0 +1,4 @@
+.env
+models/**
+!models/indobertweet/.gitkeep
+!models/whisper-large-v3/.gitkeep
