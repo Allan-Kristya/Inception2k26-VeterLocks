@@ -1,0 +1,6 @@
+# Development-only override for direct psql access to test RLS.
+# Never use this override in production.
+services:
+  db:
+    ports:
+      - "127.0.0.1:5432:5432"

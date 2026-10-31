@@ -64,6 +64,8 @@ def test_health_openapi_and_auth(client):
     health = client.get("/api/health")
     assert health.status_code == 200
     assert health.json()["database"] == "sqlite"
+    assert health.json()["database_status"] == "connected"
+    assert health.json()["release"] == "laporaman-hackathon-demo-v2.0.1"
     spec = client.get("/openapi.json").json()
     assert spec["openapi"] == "3.1.0"
     assert client.get("/api/auth/me").status_code == 401
@@ -271,3 +273,30 @@ def test_admin_bootstrap_cli_creates_first_tenant_admin(monkeypatch, tmp_path):
             assert verify_password("BootstrapAman!2026", user.password_hash)
     finally:
         engine.dispose()
+
+
+def test_report_persists_after_application_restart(tmp_path, monkeypatch):
+    """The public ticket and encrypted payload must survive an API restart."""
+    monkeypatch.setenv("BOOTSTRAP_PASSWORD", "LaporAmanDemo!2026")
+    monkeypatch.setenv("SEED_DEMO_USERS", "true")
+    limiter.items.clear()
+    db_path = tmp_path / "laporaman-persistence.db"
+    database_url = f"sqlite:///{db_path}"
+
+    first_app = create_app(database_url)
+    with TestClient(first_app) as first_client:
+        headers = login(first_client)
+        setup_key(first_client, headers)
+        created = first_client.post("/api/reports", json=encrypted_request())
+        assert created.status_code == 201, created.text
+        ticket = created.json()["ticket_id"]
+        assert first_client.get("/api/health").json()["database_status"] == "connected"
+
+    # A fresh app instance simulates stopping and starting the backend process.
+    second_app = create_app(database_url)
+    with TestClient(second_app) as second_client:
+        tracked = second_client.get(f"/api/reports/{ticket}")
+        assert tracked.status_code == 200, tracked.text
+        assert tracked.json()["ticket_id"] == ticket
+        assert tracked.json()["vault"]["ciphertext"]
+        assert tracked.json()["trail"]

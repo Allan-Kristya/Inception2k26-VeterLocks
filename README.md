@@ -1,145 +1,37 @@
-# LaporAman — V3 Full-Stack Prototype
+# LaporAman — Full-stack prototype
 
-> Branch: `v3`  
-> Acuan pengembangan: Proposal Inception 2026 dan source code awal LaporAman (V1).
+## Dokumen utama untuk hackathon
 
-LaporAman adalah prototipe platform pelaporan publik yang menghubungkan masyarakat dengan instansi pemerintah. V3 membawa proyek dari prototipe yang sebagian besar berjalan di browser menjadi prototipe **full-stack** dengan frontend web, REST API FastAPI, autentikasi petugas di server, penyimpanan SQL persisten, audit trail, alur peninjauan laporan, dan enkripsi payload di sisi browser.
+- [Quick Start Hackathon](docs/QUICK_START_HACKATHON.md)
+- [Panduan Demo Juri](docs/DEMO_GUIDE_HACKATHON.md)
+- [Deployment VPS + HTTPS](docs/DEPLOYMENT_HACKATHON.md)
+- [Catatan Pengujian](docs/TEST_REPORT_HACKATHON.md)
 
-**Status:** V3 sudah dapat dijalankan untuk demonstrasi dan pengujian lokal. V3 belum merupakan sistem layanan publik siap produksi dan belum mengintegrasikan seluruh teknologi yang disebutkan dalam proposal, seperti IndoBERTweet, Whisper, KrakenD aktif, dan Kubernetes.
+Implementasi ini menghubungkan web client dengan backend FastAPI dan database SQL. PostgreSQL + Row-Level Security (RLS) menjadi konfigurasi deployment yang disarankan; SQLite disediakan untuk pengembangan lokal/test otomatis ketika Docker/PostgreSQL belum tersedia.
 
----
+## Catatan penting saat membuka aplikasi
 
-## 1. Ringkasan perubahan V1 → V3
+File `frontend/index.html` sekarang menggunakan path relatif (`./style.css` dan `./script.js`), sehingga stylesheet tidak lagi dicari pada root drive ketika file dibuka langsung. Jika memakai `file://`, halaman juga menampilkan peringatan mode preview lokal. Namun, aplikasi full-stack **tidak dapat berfungsi penuh melalui `file://`**: browser membatasi pemuatan JavaScript ES modules dan API relatif pada skema file. Untuk menjalankan fitur sebenarnya di Windows, double-click `start-laporaman-windows.bat`. Launcher akan menunggu endpoint health backend merespons sebelum membuka browser di `http://127.0.0.1:8000`. Panduan singkat ada di `MULAI-DI-SINI.txt`.
 
-Perubahan utamanya bukan sekadar pembaruan tampilan. V1 sudah mempunyai antarmuka pelaporan, tracker, dashboard, kontrol aksesibilitas, voice command berbasis browser, klasifikasi kata kunci, dan beberapa primitive Web Crypto. Namun, sebagian besar penyimpanan dan proses otorisasi masih berjalan di browser atau `localStorage`; deskripsi dan lokasi laporan juga belum termasuk payload yang dienkripsi.
+## Yang sudah bekerja
 
-V3 mempertahankan fondasi tersebut, lalu memindahkan proses inti ke backend dan memperkuat alur keamanan serta persistensi data.
+- Form laporan anon/non-anon; validasi; lampiran JPEG/PNG/WebP/PDF.
+- E2EE di browser: kunci data acak AES-256-GCM, PBKDF2-HMAC-SHA256 310.000 iterasi untuk membungkus kunci pemilik, dan RSA-OAEP untuk membungkus kunci data bagi instansi. Payload identitas, deskripsi, lokasi, detail sensitif, dan lampiran berada di dalam ciphertext.
+- Nomor registrasi dibuat server dengan bagian acak 8 karakter; data laporan dan audit trail disimpan di database.
+- Public tracker mengembalikan metadata operasional dan ciphertext owner; isi hanya didekripsi di browser setelah kata sandi brankas yang benar diberikan.
+- Login petugas dengan JWT server-side, hashing kata sandi scrypt, scope tenant/OPD, antrean human review, routing, status bertahap, statistik dashboard.
+- RLS PostgreSQL untuk laporan, event audit, dan subscription webhook. Di SQLite, scope tenant/OPD tetap diperiksa oleh API, tetapi SQLite bukan implementasi RLS.
+- Eskalasi SLA otomatis melalui worker backend; webhook HTTPS bertanda tangan HMAC-SHA256.
+- REST API dengan OpenAPI 3.1.0; Swagger UI di `/docs`.
+- Aksesibilitas: HTML semantik, label, live region, skip link, fokus keyboard, zoom 100–200%, kontras tinggi, font ramah baca, dikte/perintah suara browser.
 
-| Area | V1 — Source code awal | V3 — Implementasi sekarang |
-|---|---|---|
-| Arsitektur | Frontend dengan logika dan simulasi di browser | Frontend web + backend FastAPI + database SQL |
-| Penyimpanan laporan | `localStorage` browser | SQLite persisten untuk development/demo; konfigurasi PostgreSQL untuk deployment |
-| Nomor registrasi | Dibuat di sisi browser | Diterbitkan backend dengan constraint unik database dan bagian acak |
-| Tracker | Membaca data lokal browser | Mengambil metadata, status, dan audit trail melalui REST API |
-| Autentikasi petugas | JWT dan pemeriksaan akses disimulasikan di browser | JWT HS256 diterbitkan dan diverifikasi backend; password di-hash dengan scrypt |
-| Isolasi tenant/OPD | Filter JavaScript yang dapat dimodifikasi klien | Scope tenant/OPD diperiksa backend; policy PostgreSQL RLS disediakan sebagai lapisan tambahan |
-| Audit trail | Riwayat lokal | Event laporan disimpan pada tabel database dan dibaca melalui API |
-| Human-in-the-loop | Antrean demonstrasi di UI | Review queue persisten; petugas dapat memverifikasi dan merutekan laporan |
-| Enkripsi laporan | Sebagian data sensitif dienkripsi; deskripsi/lokasi belum seluruhnya terenkripsi | Deskripsi, lokasi, identitas, detail sensitif, dan lampiran dienkripsi di browser sebelum dikirim |
-| Pengelolaan kunci | Belum ada alur kunci penerima instansi yang terhubung backend | DEK dibungkus untuk pelapor dan kunci publik instansi; private key instansi disimpan sebagai envelope terenkripsi |
-| Dashboard | Menggunakan data lokal/simulasi | Statistik dan pengelolaan laporan mengambil data dari backend sesuai scope akun |
-| SLA | Waktu dan eskalasi disimulasikan di browser | Worker backend memeriksa tenggat dan mencatat eskalasi |
-| Webhook | Simulasi/fetch dari browser | Pengiriman dari backend dengan HMAC-SHA256 |
-| REST API | Contoh spesifikasi dan titik integrasi | FastAPI menyediakan endpoint REST dan OpenAPI 3.1.0 |
-| Startup aplikasi | Membuka halaman frontend secara terpisah | Launcher Windows menyiapkan environment, menjalankan API, dan membuka aplikasi melalui localhost |
+## Jalankan lokal (Windows PowerShell)
 
-### Fitur yang dipertahankan dari V1
-
-- Formulir laporan anonim dan non-anonim.
-- Pelacakan tiket dan tampilan riwayat status.
-- Dashboard instansi dan ringkasan statistik.
-- Triase kata kunci lokal sebagai demonstrasi.
-- Dikte dan perintah suara menggunakan Web Speech API browser.
-- Kontrol zoom hingga 200%, kontras tinggi, font alternatif, label semantik, skip link, dan fokus keyboard.
-- Konsep integrasi webhook dan OpenAPI.
-
-Fitur-fitur tersebut tidak semuanya baru di V3. Peningkatannya adalah sebagian proses yang sebelumnya lokal/simulasi sekarang dihubungkan ke backend dan database.
-
-## 2. Fitur dan kemampuan yang ditambahkan/ditingkatkan di V3
-
-### Backend dan database
-
-- Backend REST API menggunakan **FastAPI**.
-- Akses database menggunakan **SQLAlchemy**.
-- **SQLite** dipakai sebagai database lokal untuk development dan demonstrasi.
-- Konfigurasi **PostgreSQL** dan Row-Level Security (RLS) disediakan untuk deployment.
-- Data laporan, pengguna petugas, tenant, event audit, dan konfigurasi webhook mempunyai model database.
-- Nomor tiket diterbitkan backend, bukan hanya dibuat oleh browser.
-
-### Autentikasi dan otorisasi
-
-- Login petugas melalui endpoint backend.
-- JWT HS256 dengan masa berlaku dan validasi klaim di server.
-- Password petugas di-hash menggunakan scrypt.
-- Scope tenant dan OPD berasal dari token yang diverifikasi terhadap data akun.
-- Administrator dapat membuat akun operator sesuai cakupan instansinya.
-- Perubahan password mencabut token lama melalui versi token akun.
-- Bootstrap administrator pertama tersedia melalui CLI untuk deployment tanpa akun demo.
-
-### Enkripsi payload di sisi browser
-
-V3 memperluas enkripsi dari sebagian data sensitif menjadi seluruh isi payload laporan:
-
-- **AES-256-GCM** untuk mengenkripsi payload.
-- **PBKDF2-HMAC-SHA256 dengan 310.000 iterasi** untuk derivasi/pembungkusan kunci milik pelapor.
-- Data Encryption Key (DEK) dibuat secara acak untuk setiap laporan.
-- **RSA-OAEP 3072-bit** digunakan untuk membungkus DEK bagi instansi penerima.
-- Private key instansi disimpan di server hanya dalam bentuk envelope terenkripsi, bukan private key plaintext.
-- Deskripsi, lokasi kejadian, identitas, detail sensitif, dan lampiran dimasukkan ke payload ciphertext.
-
-Backend tidak menyediakan endpoint dekripsi payload. Pelapor membuka salinan kunci miliknya di browser; petugas membuka salinan kunci instansi di browser menggunakan private key instansi.
-
-**Batasan keamanan:** metadata operasional seperti tenant, nomor tiket, status, waktu, label/saran klasifikasi, flag anonim, dan tenggat SLA tetap diproses server. Karena itu, jangan menyebut sistem ini sebagai Zero-Knowledge mutlak tanpa threat modeling dan audit kriptografi independen. Password brankas pelapor dan administrator tidak dapat dipulihkan oleh server. Private key instansi harus memiliki prosedur backup offline terenkripsi sebelum penggunaan nyata.
-
-### Workflow laporan, dashboard, dan integrasi
-
-- Tracker publik membaca data tiket melalui API.
-- Status, peninjauan, routing OPD, dan riwayat aktivitas dikelola melalui backend.
-- Semua laporan baru masuk antrean peninjauan manusia sampai model klasifikasi server yang tervalidasi tersedia.
-- Dashboard menggunakan data backend dengan pembatasan tenant/OPD.
-- Worker backend memproses eskalasi SLA.
-- Webhook dikirim server-side dengan tanda tangan HMAC-SHA256.
-- Dokumentasi OpenAPI 3.1.0 tersedia melalui Swagger UI.
-
-### Perbaikan startup V3
-
-V3 juga memperbaiki kegagalan startup yang ditemukan pada paket sebelumnya. `openapi_version` tidak lagi diberikan sebagai argumen constructor `FastAPI`; versi OpenAPI ditetapkan melalui atribut aplikasi (`app.openapi_version = "3.1.0"`). Dengan begitu, backend tidak berhenti saat membuat instance FastAPI.
-
-Launcher Windows menjalankan backend pada `127.0.0.1:8000` dan menyediakan pemeriksaan kesiapan endpoint `/api/health` sebelum membuka halaman aplikasi.
-
-## 3. Teknologi yang digunakan
-
-| Lapisan | Teknologi |
-|---|---|
-| Frontend | HTML5, CSS, JavaScript ES Modules |
-| Backend | Python, FastAPI, Uvicorn |
-| Database access | SQLAlchemy |
-| Database development | SQLite |
-| Database deployment | PostgreSQL |
-| Authentication | JWT HS256 |
-| Password hashing | scrypt |
-| Client-side encryption | Web Crypto API, PBKDF2-HMAC-SHA256, AES-256-GCM, RSA-OAEP |
-| Webhook signing | HMAC-SHA256 |
-| API documentation | OpenAPI 3.1.0 / Swagger UI |
-| Testing | pytest, HTTPX, Node.js Web Crypto smoke test |
-| Container deployment | Docker Compose (opsional) |
-
-## 4. Menjalankan aplikasi di Windows
-
-### Prasyarat
-
-- Python **3.11 atau lebih baru** dengan Python Launcher (`py`).
-- Koneksi internet pada proses instalasi dependency pertama kali.
-- Node.js 20+ hanya diperlukan untuk menjalankan smoke test E2EE.
-
-### Cara paling mudah
-
-1. Ekstrak project ke folder lokal.
-2. Buka folder `laporaman-fullstack`.
-3. Jalankan `start-laporaman-windows.bat`.
-4. Launcher membuat virtual environment jika belum ada, memasang dependency backend, lalu menjalankan Uvicorn.
-5. Aplikasi dibuka pada `http://127.0.0.1:8000`.
-6. Periksa `http://127.0.0.1:8000/api/health` untuk memastikan backend aktif.
-
-Jangan menjalankan `frontend/index.html` dengan double-click jika ingin menguji login, API, database, tracker, dan dashboard. Mode `file://` hanya untuk melihat tampilan dasar; gunakan alamat localhost untuk fungsi full-stack.
-
-### Menjalankan secara manual
-
-Buka PowerShell pada root project:
+Prasyarat: Python 3.11+ dan Node.js 20+ (Node hanya untuk tes kriptografi). Instalasi lokal SQLite tidak memerlukan driver PostgreSQL. Buka terminal di folder proyek ini:
 
 ```powershell
 cd backend
-py -3 -m venv .venv
+py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -r requirements-dev.txt
@@ -148,59 +40,58 @@ $env:SEED_DEMO_USERS = "true"
 $env:BOOTSTRAP_PASSWORD = "LaporAmanDemo!2026"
 $env:JWT_SECRET = "local-dev-jwt-secret-change-before-deployment-2026"
 $env:APP_ENCRYPTION_KEY = "local-dev-webhook-encryption-key-change-2026"
-$env:APP_ENV = "development"
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+uvicorn app.main:app --reload --no-access-log
 ```
 
-Buka `http://127.0.0.1:8000`.
+Buka `http://127.0.0.1:8000`. File database SQLite `laporaman.db` dibuat pada root proyek secara otomatis.
 
-### Database lokal
+### Akun demo lokal
 
-Secara default V3 memakai SQLite. File `laporaman.db` dibuat otomatis pada root project `laporaman-fullstack/` setelah backend berhasil melakukan startup. Database tetap tersimpan setelah server dihentikan.
-
-Akun demo lokal:
-
-| Peran | Email | Password awal |
+| Peran | Email | Kata sandi awal |
 |---|---|---|
 | Administrator Kota Surabaya | `admin.sby@laporaman.local` | `LaporAmanDemo!2026` |
 | Operator Dinas PU Surabaya | `operator.pu@laporaman.local` | `LaporAmanDemo!2026` |
 | Administrator Kabupaten Sidoarjo | `operator.sda@laporaman.local` | `LaporAmanDemo!2026` |
 
-Akun tersebut hanya untuk demonstrasi localhost. Jangan gunakan kredensial demo atau secret default untuk deployment yang dapat diakses publik.
+Kredensial ini hanya untuk localhost/demo. Ganti secret dan password bootstrap sebelum deployment, jangan gunakan seed demo untuk sistem publik. Pada `APP_ENV=production`, backend menolak secret default, seed demo aktif, atau SQLite. Password bootstrap hanya digunakan saat akun pertama kali dibuat. Untuk mengulang seed pada database SQLite, hentikan server dan hapus `laporaman.db` terlebih dahulu.
 
-## 5. Setup kunci instansi sebelum mengirim laporan
+## Jalankan PostgreSQL dengan Docker Compose
 
-1. Login ke Dashboard instansi menggunakan akun administrator.
-2. Buat pasangan kunci enkripsi instansi dan tetapkan password brankas kunci.
-3. Simpan password brankas secara aman. Private key instansi disimpan sebagai envelope terenkripsi.
-4. Kembali ke formulir laporan, pilih wilayah yang sudah memiliki public key, lalu kirim laporan.
-5. Simpan nomor tiket untuk pengujian tracker.
-
-Jika kunci publik instansi belum disiapkan, pengiriman laporan untuk wilayah tersebut akan ditolak. Ini perilaku yang disengaja agar sistem tidak menyimpan laporan terenkripsi tanpa penerima yang dapat membukanya.
-
-## 6. Menjalankan PostgreSQL dengan Docker Compose
-
-V3 menyediakan konfigurasi PostgreSQL + API di `docker-compose.yml`. Sebelum menjalankan:
-
-1. Salin `.env.example` menjadi `.env`.
-2. Ganti seluruh password dan secret contoh dengan nilai acak yang kuat.
-3. Gunakan karakter URL-safe untuk password PostgreSQL yang dimasukkan ke URL koneksi.
-4. Jalankan dari root project:
+Salin `.env.example` menjadi `.env`, ganti seluruh nilai secret termasuk `POSTGRES_APP_PASSWORD`, lalu jalankan dari root. Image Docker memasang dependency tambahan dari `backend/requirements-postgres.txt` (termasuk driver PostgreSQL); instalasi Windows/SQLite hanya memakai `backend/requirements.txt`. Password PostgreSQL pada URL koneksi harus menggunakan karakter URL-safe. File `init-role.sh` membuat role runtime non-superuser dan memberi password dari environment (bukan hard-coded di SQL).
 
 ```bash
 docker compose up --build
 ```
 
-Compose menggunakan koneksi administratif untuk bootstrap schema dan role runtime non-superuser untuk akses aplikasi. Policy PostgreSQL `ENABLE/FORCE ROW LEVEL SECURITY` tersedia pada tabel laporan, event laporan, dan subscription webhook.
+Web/API tersedia pada `http://localhost:8000`; dokumentasi API pada `http://localhost:8000/docs`. Compose menggunakan role admin hanya untuk bootstrap schema dan aplikasi memakai role runtime `laporaman_app` non-superuser/table owner sehingga PostgreSQL RLS dapat berlaku. Role runtime dibuat oleh `backend/postgres/init-role.sh` dengan `POSTGRES_APP_PASSWORD`. Jika kredensial role diubah setelah volume database dibuat, script init tidak dijalankan ulang secara otomatis; lakukan rotasi kredensial secara eksplisit di PostgreSQL dan samakan URL koneksi API.
 
-**Catatan validasi:** policy RLS sudah ditulis di source code, tetapi harus diuji pada instance PostgreSQL sungguhan, termasuk percobaan akses lintas tenant dan lintas OPD. SQLite tidak mengimplementasikan RLS.
+## Alur penggunaan pertama
 
-## 7. Pengujian
+1. Masuk ke Dashboard instansi dengan akun administrator.
+2. Buat kunci instansi. Pasangan RSA-OAEP dibuat di browser; private key diekspor, dienkripsi dengan PBKDF2/AES-GCM, lalu envelope ciphertext disimpan di server. Server tidak menerima private key plaintext.
+3. Kembali ke Buat laporan. Pilih wilayah yang kunci publiknya sudah disiapkan. Isi formulir, tentukan anonim/non-anonim, masukkan kata sandi brankas, setujui metadata operasional, lalu kirim. Dalam mode anonim, identitas tidak diminta oleh formulir, tetapi narasi, foto, dokumen, atau lokasi masih dapat secara tidak langsung mengungkap identitas; periksa konten sebelum mengirim.
+4. Simpan nomor tiket. Pada Tracker, kata sandi brankas membuka isi laporan di browser.
+5. Petugas login, membuka kunci privat instansi menggunakan kata sandi brankas kunci, lalu memproses laporan dalam cakupan tenant/OPD token.
 
-Dari root project:
+**Penting untuk pemulihan:** kata sandi brankas warga dan kata sandi brankas kunci instansi tidak dapat dipulihkan oleh server. Jika hilang, ciphertext terkait tidak dapat didekripsi. Kehilangan kunci privat instansi juga akan menghalangi petugas membuka laporan lama; siapkan prosedur backup offline terenkripsi sebelum penggunaan produksi. Rotasi kunci belum disediakan karena memerlukan re-envelope seluruh data key lama. Model E2EE ini mengasumsikan kode client yang disajikan ke browser adalah tepercaya; kompromi pada pipeline rilis/static hosting dapat mengubah client dan harus dimitigasi dengan secure build/release, CSP, review kode, dan audit independen.
 
-```powershell
+## Bootstrap administrator tanpa akun demo
+
+Untuk deployment dengan `APP_ENV=production` dan `SEED_DEMO_USERS=false`, mulai service agar schema/tenant dibuat, kemudian buat administrator pertama melalui koneksi database admin. Perintah meminta password secara interaktif dan tidak menaruh password di shell history:
+
+```bash
+docker compose exec api python -m app.cli create-admin --email admin@instansi.go.id --name "Administrator Instansi" --tenant sby
+```
+
+Akun administrator mengelola akun operator dari dashboard. Ganti password awal setelah login; perubahan password mencabut seluruh token lama untuk akun tersebut.
+
+## Pengujian
+
+Dari root proyek:
+
+```bash
 cd backend
+python -m pip install -r requirements-dev.txt
 $env:PYTHONPATH = "."
 python -m pytest ../tests -q
 cd ..
@@ -209,76 +100,32 @@ node --check frontend/script.js
 node --check frontend/crypto.js
 ```
 
-Pengujian yang disertakan mencakup API health/OpenAPI, autentikasi, setup kunci, submit dan tracking, review/routing, pembatasan tenant/OPD, akun petugas, pergantian password/pencabutan token, webhook, dan validasi status. Smoke test E2EE memeriksa dekripsi oleh pemilik/petugas dan penolakan password yang salah.
+Test API berjalan terhadap SQLite in-memory; test E2EE menjalankan modul kriptografi yang sama dengan browser menggunakan Web Crypto pada Node.js.
 
-Hasil pemeriksaan terakhir pada lingkungan pengembangan: **9/9 tes API lulus**, E2EE smoke test lulus, pemeriksaan sintaks JavaScript lulus, dan HTTP smoke test untuk halaman/aset/API lulus. Pengujian PostgreSQL RLS dan browser end-to-end belum berhasil dilakukan di lingkungan pemeriksaan; jalankan pengujian tersebut pada mesin dan browser target sebelum demo final.
+## Batasan dan integrasi eksternal yang belum tersedia
 
-## 8. Fitur yang belum terintegrasi / belum siap produksi
+- **IndoBERTweet / Parallel-CNN atau Bi-GRU / Focal Loss belum terintegrasi.** Klasifikasi saat ini adalah adapter kata kunci lokal untuk demonstrasi; confidence score tidak terkalibrasi sebagai probabilitas ML. Jangan gunakan sebagai keputusan otomatis pada layanan publik sebelum model dilatih, divalidasi, diuji bias, dan dipasang pada inference service. Backend sengaja tidak mengirim plaintext ke model pihak ketiga agar sifat E2EE tidak diam-diam dilanggar. Integrasi model perlu keputusan arsitektur (inference on-device, trusted enclave, atau alur persetujuan terpisah yang tidak mengklaim zero-knowledge).
+- **Whisper Large v3 belum tersedia.** Dikte/perintah suara memakai Web Speech API browser dan tergantung dukungan browser/izin mikrofon.
+- **KrakenD** disertakan sebagai contoh konfigurasi gateway di `backend/gateway/krakend.json`, tetapi tidak dijalankan oleh Compose default. FastAPI memvalidasi JWT dan limiter in-memory untuk perlindungan dasar; rate limiting terdistribusi harus dipindahkan ke gateway/Redis. Konfigurasi KrakenD saat ini masih contoh minimal dan perlu route upstream tambahan sebelum menjadi gateway penuh.
+- **Kubernetes, mobile native iOS/Android, push FCM/APNs, WebSocket/SSE, dan konektor SPBE/Smart City spesifik instansi belum dideploy.** Tracker melakukan polling browser (bukan WebSocket), sedangkan SLA diproses oleh worker backend; untuk multi-replica produksi perlu scheduler/queue terkoordinasi dan observability.
+- Webhook menyaring URL non-HTTPS dan alamat IP literal non-publik, tetapi pencegahan SSRF/DNS rebinding produksi tetap perlu egress firewall/proxy allowlist dan resolver yang aman.
+- Key setup RSA dibuat di browser administrator pertama. Saat ini hanya satu keypair per tenant dan tidak ada proses rotasi/recovery. Gunakan prosedur backup kunci privat terenkripsi dan multi-approval sebelum pilot.
+- SQLite development tidak menerapkan PostgreSQL RLS. Uji kebijakan RLS pada PostgreSQL deployment aktual sebelum menerima data sungguhan. Tidak ada access log Uvicorn di container untuk mengurangi jejak IP di log aplikasi; reverse proxy/WAF di depan backend juga harus menerapkan kebijakan log minimisasi data.
+- Audit WCAG 2.1 AA formal, penetration test, threat modeling, audit KAMI/ISO 27001, DPIA, retensi/pemusnahan data, consent & legal review UU PDP, observability, backup/restore, dan disaster recovery belum dilakukan.
 
-Hal-hal berikut tidak boleh dipresentasikan sebagai integrasi aktif di V3:
-
-- **IndoBERTweet, Parallel-CNN/Bi-GRU, dan Focal Loss:** belum terintegrasi. Triase saat ini memakai kata kunci lokal sebagai saran demonstrasi. Confidence score bukan probabilitas ML yang tervalidasi. Backend tidak mempercayai skor dari browser untuk auto-dispatch; laporan tetap masuk human review.
-- **Whisper Large v3:** belum terintegrasi. Dikte/perintah suara memakai Web Speech API browser dan bergantung pada dukungan browser serta izin mikrofon.
-- **KrakenD:** hanya contoh konfigurasi minimal di `backend/gateway/krakend.json`, belum menjadi API gateway aktif pada Compose default. Rate limiter FastAPI bersifat in-memory/proses tunggal.
-- **Kubernetes:** konfigurasi cluster dan deployment production belum tersedia.
-- **Mobile native iOS/Android:** belum dibuat; yang tersedia adalah web app responsif.
-- **Push notification dan WebSocket/SSE:** belum tersedia. Tracker menggunakan polling browser dan notifikasi browser; worker SLA berjalan di backend.
-- **Integrasi SPBE/SP4N-LAPOR/Smart City spesifik instansi:** webhook dan OpenAPI menjadi titik awal, tetapi konektor serta proses persetujuan instansi belum dibuat.
-- **Audit WCAG 2.1 AA, penetration test, audit KAMI/ISO 27001, threat model, DPIA, dan legal review UU PDP:** belum dilakukan secara formal.
-- **Backup/restore, rotasi/pemulihan kunci, MFA/SSO, observability terpusat, serta disaster recovery:** belum tersedia secara lengkap.
-
-V3 adalah prototipe untuk pengembangan dan demonstrasi, bukan layanan publik produksi.
-
-## 9. Struktur direktori
+## Struktur proyek
 
 ```text
 laporaman-fullstack/
-├── frontend/
-│   ├── index.html
-│   ├── style.css
-│   ├── script.js
-│   └── crypto.js
+├── frontend/                 # index.html, style.css, script.js, crypto.js
 ├── backend/
-│   ├── app/
-│   │   ├── main.py
-│   │   ├── database.py
-│   │   ├── models.py
-│   │   ├── schemas.py
-│   │   ├── security.py
-│   │   └── cli.py
-│   ├── gateway/krakend.json
-│   ├── postgres/init-role.sh
+│   ├── app/                  # FastAPI, SQLAlchemy, JWT, RLS, webhook, SLA worker
+│   ├── postgres/init-role.sh # Role runtime PostgreSQL
+│   ├── gateway/krakend.json  # Contoh gateway opsional
 │   ├── Dockerfile
-│   ├── requirements.txt
-│   └── requirements-dev.txt
-├── tests/
-│   ├── test_api.py
-│   └── e2ee-smoke.mjs
-├── docs/
-│   ├── PROPOSAL_ASLI.md
-│   ├── GAP_ANALYSIS.md
-│   ├── ARCHITECTURE.md
-│   └── FINAL_IMPLEMENTATION_REPORT.md
-├── legacy-source/             # Snapshot source V1 untuk pembanding
+│   └── requirements.txt
+├── tests/                    # API & E2EE smoke tests
+├── docs/PROPOSAL_ASLI.md
 ├── docker-compose.yml
-├── .env.example
-├── package.json
-├── start-laporaman-windows.bat
-└── README.md
+└── .env.example
 ```
-
-## 10. Catatan Git branch `v3`
-
-Branch `v3` berisi implementasi full-stack dan perbaikan startup backend dibandingkan baseline V1. Source code awal tetap disimpan di `legacy-source/` untuk menjaga pembanding dan histori audit.
-
-Contoh commit untuk README ini:
-
-```bash
-git add README.md
-git commit -m "docs: add V3 implementation README"
-```
-
----
-
-**LaporAman — Inception 2026**  
-UPN “Veteran” Jawa Timur

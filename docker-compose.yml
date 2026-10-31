@@ -35,7 +35,8 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       APP_ENV: ${APP_ENV:-development}
     ports:
-      - "8000:8000"
+      # Bind only to loopback; expose publicly through an HTTPS reverse proxy.
+      - "127.0.0.1:8000:8000"
 
 volumes:
   laporaman_pgdata:

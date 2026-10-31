@@ -20,8 +20,8 @@ import httpx
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import func, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func, select, text
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
@@ -399,7 +399,16 @@ def create_app(database_url: str | None = None, admin_database_url: str | None =
 
     @app.get("/api/health", tags=["system"])
     def health():
-        return {"status": "ok", "service": "laporaman-api", "database": runtime_engine.dialect.name, "openapi": "3.1.0"}
+        # A process-only health response can hide a disconnected database.
+        # Probe the configured runtime connection so judges/operators can tell
+        # whether the API is actually ready to accept and persist reports.
+        try:
+            with runtime_engine.connect() as connection:
+                connection.execute(text("SELECT 1"))
+        except SQLAlchemyError as exc:
+            log.error("Health check database probe failed: %s", type(exc).__name__)
+            raise HTTPException(status_code=503, detail="Database belum tersedia.") from exc
+        return {"status": "ok", "service": "laporaman-api", "release": "laporaman-hackathon-demo-v2.0.1", "database": runtime_engine.dialect.name, "database_status": "connected", "openapi": "3.1.0"}
 
     @app.get("/api/tenants/{tenant_id}/public-key", tags=["tenants"])
     def tenant_public_key(tenant_id: str, db: Db):

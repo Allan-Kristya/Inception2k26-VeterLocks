@@ -1,0 +1,537 @@
+{
+  "$schema": "https://www.krakend.io/schema/v3.json",
+  "version": 3,
+  "name": "laporaman-enterprise-gateway",
+  "port": 8080,
+  "timeout": "15s",
+  "cache_ttl": "0s",
+  "output_encoding": "no-op",
+  "extra_config": {
+    "security/cors": {
+      "allow_origins": [
+        "http://localhost:8080"
+      ],
+      "allow_methods": [
+        "GET",
+        "POST",
+        "PATCH",
+        "OPTIONS"
+      ],
+      "allow_headers": [
+        "Authorization",
+        "Content-Type",
+        "X-Request-ID"
+      ],
+      "expose_headers": [
+        "X-Request-ID"
+      ],
+      "max_age": "12h"
+    }
+  },
+  "endpoints": [
+    {
+      "endpoint": "/api/health",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "backend": [
+        {
+          "host": [
+            "http://api:8000"
+          ],
+          "url_pattern": "/api/health",
+          "encoding": "no-op"
+        }
+      ],
+      "extra_config": {
+        "qos/ratelimit/router": {
+          "client_max_rate": 8,
+          "client_capacity": 1,
+          "every": "10s",
+          "strategy": "ip"
+        }
+      }
+    },
+    {
+      "endpoint": "/api/v2/auth/token",
+      "method": "POST",
+      "input_headers": [
+        "Content-Type",
+        "X-Request-ID"
+      ],
+      "extra_config": {
+        "qos/ratelimit/router": {
+          "client_max_rate": 8,
+          "client_capacity": 1,
+          "every": "10s",
+          "strategy": "ip"
+        }
+      },
+      "backend": [
+        {
+          "host": [
+            "http://api:8000"
+          ],
+          "url_pattern": "/api/v2/auth/token",
+          "method": "POST",
+          "encoding": "no-op"
+        }
+      ]
+    },
+    {
+      "endpoint": "/openapi.json",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "backend": [
+        {
+          "host": [
+            "http://api:8000"
+          ],
+          "url_pattern": "/openapi.json",
+          "encoding": "no-op"
+        }
+      ],
+      "extra_config": {
+        "qos/ratelimit/router": {
+          "client_max_rate": 8,
+          "client_capacity": 1,
+          "every": "10s",
+          "strategy": "ip"
+        }
+      }
+    },
+    {
+      "endpoint": "/docs",
+      "method": "GET",
+      "input_headers": [],
+      "output_encoding": "no-op",
+      "extra_config": {
+        "qos/ratelimit/router": {
+          "client_max_rate": 8,
+          "client_capacity": 1,
+          "every": "10s",
+          "strategy": "ip"
+        }
+      },
+      "backend": [
+        {
+          "host": [
+            "http://api:8000"
+          ],
+          "url_pattern": "/docs",
+          "encoding": "no-op"
+        }
+      ]
+    },
+    {
+      "endpoint": "/redoc",
+      "method": "GET",
+      "input_headers": [],
+      "output_encoding": "no-op",
+      "extra_config": {
+        "qos/ratelimit/router": {
+          "client_max_rate": 8,
+          "client_capacity": 1,
+          "every": "10s",
+          "strategy": "ip"
+        }
+      },
+      "backend": [
+        {
+          "host": [
+            "http://api:8000"
+          ],
+          "url_pattern": "/redoc",
+          "encoding": "no-op"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v2/auth/me",
+      "method": "GET",
+      "input_headers": [
+        "Authorization",
+        "X-Request-ID"
+      ],
+      "output_encoding": "no-op",
+      "extra_config": {
+        "auth/validator": {
+          "alg": "RS256",
+          "jwk_local_path": "/run/jwt/jwks.json",
+          "issuer": "https://api.laporaman.local",
+          "audience": [
+            "laporaman-operator"
+          ],
+          "roles_key": "roles",
+          "roles": [
+            "operator",
+            "tenant_admin",
+            "triage"
+          ]
+        },
+        "qos/ratelimit/router": {
+          "client_max_rate": 8,
+          "client_capacity": 1,
+          "every": "10s",
+          "strategy": "ip"
+        }
+      },
+      "backend": [
+        {
+          "host": [
+            "http://api:8000"
+          ],
+          "url_pattern": "/api/v2/auth/me",
+          "encoding": "no-op"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v2/public/tenants/{tenant_id}/reports/{ticket_id}",
+      "method": "GET",
+      "input_headers": [],
+      "output_encoding": "no-op",
+      "extra_config": {
+        "qos/ratelimit/router": {
+          "client_max_rate": 8,
+          "client_capacity": 1,
+          "every": "10s",
+          "strategy": "ip"
+        }
+      },
+      "backend": [
+        {
+          "host": [
+            "http://api:8000"
+          ],
+          "url_pattern": "/api/v2/public/tenants/{tenant_id}/reports/{ticket_id}",
+          "encoding": "no-op"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v2/public/tenants/{tenant_id}/recipient-keys",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "extra_config": {
+        "qos/ratelimit/router": {
+          "client_max_rate": 8,
+          "client_capacity": 1,
+          "every": "10s",
+          "strategy": "ip"
+        }
+      },
+      "backend": [
+        {
+          "host": [
+            "http://api:8000"
+          ],
+          "url_pattern": "/api/v2/public/tenants/{tenant_id}/recipient-keys",
+          "encoding": "no-op"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v2/admin/recipient-keys/{recipient_id}",
+      "method": "POST",
+      "input_headers": [
+        "Authorization",
+        "Content-Type",
+        "X-Request-ID"
+      ],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "RS256",
+          "jwk_local_path": "/run/jwt/jwks.json",
+          "issuer": "https://api.laporaman.local",
+          "audience": [
+            "laporaman-operator"
+          ],
+          "roles_key": "roles",
+          "roles": [
+            "tenant_admin"
+          ]
+        },
+        "qos/ratelimit/router": {
+          "client_max_rate": 8,
+          "client_capacity": 1,
+          "every": "10s",
+          "strategy": "ip"
+        }
+      },
+      "backend": [
+        {
+          "host": [
+            "http://api:8000"
+          ],
+          "url_pattern": "/api/v2/admin/recipient-keys/{recipient_id}",
+          "method": "POST",
+          "encoding": "no-op"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v2/reports",
+      "method": "POST",
+      "input_headers": [
+        "Content-Type",
+        "X-Request-ID"
+      ],
+      "extra_config": {
+        "qos/ratelimit/router": {
+          "client_max_rate": 8,
+          "client_capacity": 1,
+          "every": "10s",
+          "strategy": "ip"
+        }
+      },
+      "backend": [
+        {
+          "host": [
+            "http://api:8000"
+          ],
+          "url_pattern": "/api/v2/reports",
+          "method": "POST",
+          "encoding": "no-op"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v2/reports",
+      "method": "GET",
+      "input_headers": [
+        "Authorization",
+        "X-Request-ID"
+      ],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "RS256",
+          "jwk_local_path": "/run/jwt/jwks.json",
+          "issuer": "https://api.laporaman.local",
+          "audience": [
+            "laporaman-operator"
+          ],
+          "roles_key": "roles",
+          "roles": [
+            "operator",
+            "tenant_admin",
+            "triage"
+          ]
+        },
+        "qos/ratelimit/router": {
+          "client_max_rate": 8,
+          "client_capacity": 1,
+          "every": "10s",
+          "strategy": "ip"
+        }
+      },
+      "backend": [
+        {
+          "host": [
+            "http://api:8000"
+          ],
+          "url_pattern": "/api/v2/reports",
+          "method": "GET",
+          "encoding": "no-op"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v2/reports/{report_id}",
+      "method": "GET",
+      "input_headers": [
+        "Authorization",
+        "X-Request-ID"
+      ],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "RS256",
+          "jwk_local_path": "/run/jwt/jwks.json",
+          "issuer": "https://api.laporaman.local",
+          "audience": [
+            "laporaman-operator"
+          ],
+          "roles_key": "roles",
+          "roles": [
+            "operator",
+            "tenant_admin",
+            "triage"
+          ]
+        },
+        "qos/ratelimit/router": {
+          "client_max_rate": 8,
+          "client_capacity": 1,
+          "every": "10s",
+          "strategy": "ip"
+        }
+      },
+      "backend": [
+        {
+          "host": [
+            "http://api:8000"
+          ],
+          "url_pattern": "/api/v2/reports/{report_id}",
+          "method": "GET",
+          "encoding": "no-op"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v2/reports/{report_id}/route",
+      "method": "POST",
+      "input_headers": [
+        "Authorization",
+        "Content-Type",
+        "X-Request-ID"
+      ],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "RS256",
+          "jwk_local_path": "/run/jwt/jwks.json",
+          "issuer": "https://api.laporaman.local",
+          "audience": [
+            "laporaman-operator"
+          ],
+          "roles_key": "roles",
+          "roles": [
+            "tenant_admin",
+            "triage"
+          ]
+        },
+        "qos/ratelimit/router": {
+          "client_max_rate": 8,
+          "client_capacity": 1,
+          "every": "10s",
+          "strategy": "ip"
+        }
+      },
+      "backend": [
+        {
+          "host": [
+            "http://api:8000"
+          ],
+          "url_pattern": "/api/v2/reports/{report_id}/route",
+          "method": "POST",
+          "encoding": "no-op"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v2/reports/{report_id}/status",
+      "method": "PATCH",
+      "input_headers": [
+        "Authorization",
+        "Content-Type",
+        "X-Request-ID"
+      ],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "RS256",
+          "jwk_local_path": "/run/jwt/jwks.json",
+          "issuer": "https://api.laporaman.local",
+          "audience": [
+            "laporaman-operator"
+          ],
+          "roles_key": "roles",
+          "roles": [
+            "operator",
+            "tenant_admin",
+            "triage"
+          ]
+        },
+        "qos/ratelimit/router": {
+          "client_max_rate": 8,
+          "client_capacity": 1,
+          "every": "10s",
+          "strategy": "ip"
+        }
+      },
+      "backend": [
+        {
+          "host": [
+            "http://api:8000"
+          ],
+          "url_pattern": "/api/v2/reports/{report_id}/status",
+          "method": "PATCH",
+          "encoding": "no-op"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v2/integrations/webhooks",
+      "method": "POST",
+      "input_headers": [
+        "Authorization",
+        "Content-Type",
+        "X-Request-ID"
+      ],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "RS256",
+          "jwk_local_path": "/run/jwt/jwks.json",
+          "issuer": "https://api.laporaman.local",
+          "audience": [
+            "laporaman-operator"
+          ],
+          "roles_key": "roles",
+          "roles": [
+            "tenant_admin"
+          ]
+        },
+        "qos/ratelimit/router": {
+          "client_max_rate": 8,
+          "client_capacity": 1,
+          "every": "10s",
+          "strategy": "ip"
+        }
+      },
+      "backend": [
+        {
+          "host": [
+            "http://api:8000"
+          ],
+          "url_pattern": "/api/v2/integrations/webhooks",
+          "method": "POST",
+          "encoding": "no-op"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/v2/integrations/webhooks",
+      "method": "GET",
+      "input_headers": [
+        "Authorization",
+        "X-Request-ID"
+      ],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "RS256",
+          "jwk_local_path": "/run/jwt/jwks.json",
+          "issuer": "https://api.laporaman.local",
+          "audience": [
+            "laporaman-operator"
+          ],
+          "roles_key": "roles",
+          "roles": [
+            "tenant_admin"
+          ]
+        },
+        "qos/ratelimit/router": {
+          "client_max_rate": 8,
+          "client_capacity": 1,
+          "every": "10s",
+          "strategy": "ip"
+        }
+      },
+      "backend": [
+        {
+          "host": [
+            "http://api:8000"
+          ],
+          "url_pattern": "/api/v2/integrations/webhooks",
+          "method": "GET",
+          "encoding": "no-op"
+        }
+      ]
+    }
+  ]
+}

@@ -4,7 +4,7 @@ chcp 65001 >nul
 cd /d "%~dp0backend"
 
 echo ===============================================
-echo  LaporAman - Local Development Launcher
+echo  LaporAman v2.0.1 - Local Demo Launcher
 echo ===============================================
 echo.
 
@@ -14,6 +14,14 @@ if errorlevel 1 (
   echo Install Python 3.11 atau lebih baru, lalu jalankan file ini lagi.
   pause
   exit /b 1
+)
+
+REM Reuse only this exact release. Do not accidentally attach to an older LaporAman process.
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$u='http://127.0.0.1:8000/api/health'; $expected='laporaman-hackathon-demo-v2.0.1'; try { $r=Invoke-RestMethod -Uri $u -TimeoutSec 2; if($r.status -eq 'ok' -and $r.release -eq $expected -and $r.database_status -eq 'connected'){ Start-Process 'http://127.0.0.1:8000'; exit 0 } } catch {}; $p=Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue; if($p){ $ownerPid=$p[0].OwningProcess; $proc=Get-Process -Id $ownerPid -ErrorAction SilentlyContinue; Write-Host '[ERROR] Port 8000 digunakan server lain atau versi LaporAman lama.'; Write-Host ('PID: ' + $ownerPid + ' | Proses: ' + $proc.ProcessName); Write-Host 'Hentikan server lama dengan: taskkill /PID ' + $ownerPid + ' /T /F'; exit 2 }; exit 1"
+if errorlevel 2 goto :port_error
+if not errorlevel 1 (
+  echo LaporAman sudah berjalan. Browser telah dibuka.
+  exit /b 0
 )
 
 if not exist ".venv\Scripts\python.exe" (
@@ -40,13 +48,21 @@ echo.
 echo [3/3] Menjalankan backend LaporAman...
 echo Server: http://127.0.0.1:8000
 echo Health check: http://127.0.0.1:8000/api/health
-echo Browser akan dibuka setelah backend benar-benar siap.
+echo Browser akan dibuka setelah backend siap.
 echo Tekan Ctrl+C untuk menghentikan server.
 echo.
-start "" powershell -NoProfile -WindowStyle Hidden -Command "$u='http://127.0.0.1:8000/api/health'; for($i=0; $i -lt 90; $i++){ try { $r=Invoke-WebRequest -UseBasicParsing -Uri $u -TimeoutSec 2; if($r.StatusCode -eq 200){ Start-Process 'http://127.0.0.1:8000'; exit 0 } } catch {} ; Start-Sleep -Seconds 1 }; exit 1"
+start "LaporAman browser readiness" /min powershell -NoProfile -ExecutionPolicy Bypass -Command "$u='http://127.0.0.1:8000/api/health'; for($i=0; $i -lt 90; $i++){ try { $r=Invoke-RestMethod -Uri $u -TimeoutSec 2; if($r.status -eq 'ok' -and $r.database_status -eq 'connected'){ Start-Process 'http://127.0.0.1:8000'; exit 0 } } catch {}; Start-Sleep -Seconds 1 }; Write-Host 'LaporAman tidak siap dalam 90 detik.'; exit 1"
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-access-log
 if errorlevel 1 goto :server_error
 exit /b 0
+
+:port_error
+echo.
+echo [ERROR] Port 8000 sedang digunakan server lain atau versi lama.
+echo Jalankan perintah taskkill yang ditampilkan di atas untuk menghentikan PID lama.
+echo Setelah itu, jalankan kembali launcher dari folder v2.0.1.
+pause
+exit /b 2
 
 :server_error
 echo.
