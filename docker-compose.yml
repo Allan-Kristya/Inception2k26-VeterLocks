@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: laporaman
+      POSTGRES_USER: laporaman_admin
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:-laporaman_admin_dev_password}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:-laporaman_dev_password}
+    volumes:
+      - laporaman_pgdata:/var/lib/postgresql/data
+      - ./backend/postgres/init-role.sh:/docker-entrypoint-initdb.d/01-role.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U laporaman_admin -d laporaman && psql -U laporaman_admin -d laporaman -tAc \"SELECT 1 FROM pg_roles WHERE rolname='laporaman_app'\" | grep -q 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://laporaman_app:${POSTGRES_APP_PASSWORD:-laporaman_dev_password}@db:5432/laporaman
+      ADMIN_DATABASE_URL: postgresql+psycopg://laporaman_admin:${POSTGRES_ADMIN_PASSWORD:-laporaman_admin_dev_password}@db:5432/laporaman
+      JWT_SECRET: ${JWT_SECRET:-local-dev-jwt-secret-change-before-deployment-2026}
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:-local-dev-webhook-encryption-key-change-2026}
+      BOOTSTRAP_PASSWORD: ${BOOTSTRAP_PASSWORD:-LaporAmanDemo!2026}
+      SEED_DEMO_USERS: ${SEED_DEMO_USERS:-true}
+      ACCESS_TOKEN_MINUTES: ${ACCESS_TOKEN_MINUTES:-60}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      APP_ENV: ${APP_ENV:-development}
+    ports:
+      - "8000:8000"
+
+volumes:
+  laporaman_pgdata:

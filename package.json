@@ -1,0 +1,8 @@
+{
+  "name": "laporaman-client",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:e2ee": "node tests/e2ee-smoke.mjs"
+  }
+}

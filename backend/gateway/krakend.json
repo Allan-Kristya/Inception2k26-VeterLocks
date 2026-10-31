@@ -1,0 +1,30 @@
+{
+  "$schema": "https://www.krakend.io/schema/v3.json",
+  "version": 3,
+  "name": "laporaman-gateway",
+  "port": 8080,
+  "timeout": "5s",
+  "cache_ttl": "0s",
+  "extra_config": {
+    "qos/ratelimit/router": {
+      "max_rate": 100,
+      "client_max_rate": 20,
+      "strategy": "ip"
+    }
+  },
+  "endpoints": [
+    {
+      "endpoint": "/api/health",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "backend": [
+        {
+          "host": ["http://api:8000"],
+          "url_pattern": "/api/health",
+          "method": "GET",
+          "encoding": "no-op"
+        }
+      ]
+    }
+  ]
+}

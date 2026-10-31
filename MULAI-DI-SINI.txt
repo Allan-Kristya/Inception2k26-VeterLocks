@@ -1,0 +1,8 @@
+PANDUAN CEPAT LAPORAMAN
+======================
+
+1. Untuk hanya melihat tampilan HTML, buka frontend/index.html. File CSS memakai path relatif sehingga akan tetap ditemukan.
+2. Untuk menjalankan seluruh fitur (API, login, database, enkripsi, dashboard, dan tracker), jangan membuka HTML dengan double-click.
+3. Di Windows, double-click start-laporaman-windows.bat. Script akan menyiapkan virtual environment, memasang dependency backend, lalu membuka http://127.0.0.1:8000.
+4. Pastikan Python 3.11+ terpasang. Koneksi internet diperlukan pada saat pemasangan dependency pertama kali.
+5. Akun demo lokal dan instruksi deployment PostgreSQL tersedia di README.md. Ganti seluruh secret dan password sebelum deployment produksi.
